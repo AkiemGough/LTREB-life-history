@@ -52,20 +52,20 @@ poau[poau$indID %in% not_seedlings$indID,"year_recruit"]<-NA
 na_these_birth_years<-as.vector(inspect[inspect$inf_number_spring_t1>0,"indID"])
 poau[poau$indID %in% na_these_birth_years,"year_recruit"]<-NA
 
-## make sure that each individual carries its birth year every time it appears
+## make sure that every recruit has only one birth year
+## and carries its birth year every time it appears
 poau %>% 
+  filter(org_rec==0) %>% 
   group_by(indID) %>% select(year_recruit) %>% 
-  summarize(birth_year=mean(year_recruit,na.rm=T))->birthyears
-## find any non-integer birth years (means they have different birth years in different rows)
-unique(birthyears$birth_year)
-problem_births<-c(
-birthyears[which(birthyears$birth_year>2011 & birthyears$birth_year<2012),"indID"]$indID,
-birthyears[which(birthyears$birth_year>2013 & birthyears$birth_year<2014),"indID"]$indID,
-birthyears[which(birthyears$birth_year>2016 & birthyears$birth_year<2017),"indID"]$indID,
-birthyears[which(birthyears$birth_year>2018 & birthyears$birth_year<2019),"indID"]$indID,
-birthyears[which(birthyears$birth_year>2021 & birthyears$birth_year<2022),"indID"]$indID,
-birthyears[which(birthyears$birth_year>2022 & birthyears$birth_year<2023),"indID"]$indID)
-poau %>% filter(indID %in% problem_births) %>% group_by(indID) %>% View
+  summarize(nbirths=length(unique(year_recruit,na.rm=T))) %>% 
+  filter(nbirths>1)->birthyears
+## there are 10 plants with 2 birth years - can I figure this out?
+poau %>% filter(indID %in% birthyears$indID) %>% View
+## fix these manually (Tom went back to data sheets)
+poau[poau$indID %in% birthyears$indID[c(1,2,3,4,10)],"year_recruit"]<-NA
+poau[poau$indID %in% birthyears$indID[5],"year_recruit"]<-2019
+poau[poau$indID %in% birthyears$indID[6:9],"year_recruit"]<-2021
+
 ## There was a list of problem plants that I corrected directly in the raw data
 ## There is one remaining that I cannot figure out (notes suggest some re-labeling)
 ## drop this one problem plant, then merge birth years back into full demog data, and replace the year_recruit variable
@@ -89,7 +89,7 @@ poau %>% filter(year_recruit!=year_t1) %>%
 ## add age as the difference of year_t and year_recruit
 ## note that newborns get age -1 when they appear in year t1
 ## but age zero when they first appear in year t (we'll drop the -1's)
-poau$age<-poau$year_t-poau$birth_year
+poau$age<-poau$year_t-poau$year_recruit
 ## assign age as NA for original plants
 poau$age[poau$org_rec==1]<-NA
 ## there should be as many -1's as there are 0's
@@ -144,13 +144,14 @@ which(poau$tiller_number_t1-floor(poau$tiller_number_t1)>0)
 which(poau$inf_number_spring_t-floor(poau$inf_number_spring_t)>0)
 which(poau$inf_number_spring_t1-floor(poau$inf_number_spring_t1)>0)
 
+
 # Indiana LDW -------------------------------------------------------------
 
 ## These data are published on EDI here
 ## https://doi.org/10.6073/pasta/ea7db07a578fb030a173f37f76596b62 (Accessed 2024-03-26).
 ## read in data and apply some of the data transformations used above
-indiana<-read.csv("data prep/LDW_LTREB_20072022.csv")
-str(indiana)
+## here i am reading in directly from the data package github
+indiana<-read.csv("https://raw.githubusercontent.com/texmiller/LTREB-data-package/refs/heads/master/LDW_LTREB_20072022.csv")
 indiana %>% 
   rowwise %>% 
   mutate(mean_spike_t = mean(c_across(c(spike_a_t,spike_b_t,spike_c_t)),na.rm=T),
@@ -177,9 +178,8 @@ table(indiana$age) #no there are way more 0s
 ## check that -1 ages are always cases with no data in year_t - FUCK
 indiana[which(indiana$age==-1 & !is.na(indiana$size_t)),]->bad_plants
 indiana %>% filter(id %in% bad_plants$id) %>% View
-
-## many of these have NA id, why?
-indiana[which(is.na(indiana$id)),]->no_id
+## note these are almost all 2017 birth year
+## not sure what is going on here, will come back to this -TM 3/23/25
 
 ## apply rule that if size is non-NA and inf count is NA, then inf count should be zero
 indiana$flw_count_t[!is.na(indiana$size_t) & is.na(indiana$flw_count_t)]<-0
@@ -189,34 +189,17 @@ indiana$flw_count_t1[!is.na(indiana$size_t1) & is.na(indiana$flw_count_t1)]<-0
 indiana %>% 
   group_by(id) %>% select(birth) %>% 
   summarize(nbirths=length(unique(birth,na.rm=T))) %>% 
-  filter(nbirths>1)->birthyears
-## find any non-integer birth years (means they have different birth years in different rows)
-problems<-which(birthyears$birth_year - floor(birthyears$birth_year) != 0)
-##there are this many individuals with more than one birth year
-length(problems) #ugh
-## who are they?
-indiana %>% filter(id %in% birthyears$id[problems]) %>% View
-## are these usually only off by one year?
-indiana %>% filter(id %in% birthyears$id[problems]) %>% 
-  group_by(id) %>% 
-  summarise(min_birth = min(birth),
-            max_birth = max(birth),
-            range = max_birth-min_birth) %>% View
-## jesus -- one plant has a range of 10 years
+  filter(nbirths>1)->birthyears_ind
+##there are 133 id's with multiple birth years
+##drop them for now
+indiana_no_problems <- indiana %>% filter(!(id %in% birthyears_ind$id))
 
-## some of the problems are likely numbers that we reused, which I could know
-## if the plant died but the number reappeared later. In other cases it is likely 
-## a data entry or copying error, and it is probably safe to assume the earlier year
-## is the correct one, as long as everything else checks out
-## I will go through these manually and hand-pick cases where the earliest
-## year is not the correct birth year
-
-## For now I want to keep moving, so I am just going to drop "problems".
-## Losing 596 rows. Tom will return to this (-TM 4/9/2024)
-indiana_no_problems <- indiana %>% filter(!(id %in% birthyears$id[problems]))
+##Bell sorted out most of the birth year problems (see Bell_birthyear_fixes.R)
+##read in Bell's fixed data, then merge rows into main data
+birthyears_fixed<-read.csv("data prep/birth_year_fixes.csv")
 
 ##prepare indiana data for row bind with poau data
-indiana_no_problems %>% 
+bind_rows(indiana_no_problems,birthyears_fixed) %>% 
   ##change org_rec so that original=1 / recruit=0
   mutate(original=abs(origin_01-1)) %>% 
   select(species,plot,endo_01,id,original,endo_status_from_check,birth,year_t,age,
@@ -228,11 +211,11 @@ poau %>%
   mutate(species="POAU") %>% 
   ## drop 2022-23 just to have the same years as indiana
   filter(year_t<2022) %>% 
-  select(species,Plot,Plot_endo_status,indID,org_rec,Endo,birth_year,year_t,age,
+  select(species,Plot,Plot_endo_status,indID,org_rec,Endo,year_recruit,year_t,age,
          tiller_number_t,inf_number_spring_t,mean_spike_t,year_t1,spring_survival_t1,
          tiller_number_t1,inf_number_spring_t1,mean_spike_t1) %>% 
   rename(species=species,plot=Plot,endo_01=Plot_endo_status,id=indID,original=org_rec,
-         endo_status_from_check=Endo,birth=birth_year,year_t=year_t,age=age,
+         endo_status_from_check=Endo,birth=year_recruit,year_t=year_t,age=age,
          size_t=tiller_number_t,flw_count_t=inf_number_spring_t,mean_spike_t=mean_spike_t,
          year_t1=year_t1,surv_t1=spring_survival_t1,
          size_t1=tiller_number_t1,flw_count_t1=inf_number_spring_t1,mean_spike_t1=mean_spike_t1)-> poau_for_merge
