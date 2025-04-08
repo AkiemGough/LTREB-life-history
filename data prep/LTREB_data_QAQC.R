@@ -2,7 +2,7 @@
 ## Purpose: prep grass-endo demographic data for analysis
 ## LDW data are already QAQC'd through EDI package -- that just needs to be loaded
 ## POAU data need QAQC, done here
-
+setwd("C:/Users/tm9/Dropbox/github/LTREB-life-history")
 library(readxl)
 library(tidyverse)
 ## Note on data read-in: read_excel was coercing some data to NA
@@ -60,7 +60,7 @@ poau %>%
   summarize(nbirths=length(unique(year_recruit,na.rm=T))) %>% 
   filter(nbirths>1)->birthyears
 ## there are 10 plants with 2 birth years - can I figure this out?
-poau %>% filter(indID %in% birthyears$indID) %>% View
+#poau %>% filter(indID %in% birthyears$indID) %>% View
 ## fix these manually (Tom went back to data sheets)
 poau[poau$indID %in% birthyears$indID[c(1,2,3,4,10)],"year_recruit"]<-NA
 poau[poau$indID %in% birthyears$indID[5],"year_recruit"]<-2019
@@ -79,11 +79,9 @@ poau %>% select(indID,org_rec) %>% distinct() -> poau_ind
 poau$org_rec[is.na(poau$org_rec)]<-0
 
 ## is every new individual given seedling_t1==1 upon its first appearance?
-poau %>% filter(year_recruit==year_t1) %>% 
-  filter(is.na(Seedling_t1)) %>% View
+#poau %>% filter(year_recruit==year_t1) %>% filter(is.na(Seedling_t1)) %>% View
 # yes. And if we are not in the year of recruitment seedling t1 should never =1
-poau %>% filter(year_recruit!=year_t1) %>% 
-  filter(Seedling_t1==1) %>% View
+#poau %>% filter(year_recruit!=year_t1) %>% filter(Seedling_t1==1) %>% View
 # good
 
 ## add age as the difference of year_t and year_recruit
@@ -101,7 +99,7 @@ poau$inf_number_spring_t1[!is.na(poau$tiller_number_t1) & is.na(poau$inf_number_
 
 ## weird stuff with spikelet counts
 ## there are two columns for spike_b_t but one of them has only two observations
-subset(poau,!is.na(poau$spike_b_t.1)) %>% View()
+#subset(poau,!is.na(poau$spike_b_t.1)) %>% View()
 ## so just proceed with the main spike_b_t
 
 ## the c count has non-numeric entries
@@ -125,6 +123,8 @@ poau %>%
 ## if there are non-NA entries in year t 2019, do not use their year t1 data
 poau %>% mutate(trans_year = paste(year_t,year_t1,sep=".")) %>% 
   filter(trans_year != "2019.2021") -> poau
+
+#poau %>% filter(year_t==2019) %>% View
 ## note that 2020-2021 is still here because these are rows for plants first
 ## tagged in 2021
 
@@ -160,8 +160,8 @@ indiana %>%
 ## check that size and flower count are always integer
 which(indiana$flw_count_t-floor(indiana$flw_count_t)>0)#fine
 which(indiana$flw_count_t1-floor(indiana$flw_count_t1)>0)#fine
-indiana[which(indiana$size_t-floor(indiana$size_t)>0),] %>% View
-indiana[which(indiana$size_t1-floor(indiana$size_t1)>0),] %>% View
+#indiana[which(indiana$size_t-floor(indiana$size_t)>0),] %>% View
+#indiana[which(indiana$size_t1-floor(indiana$size_t1)>0),] %>% View
 ## not sure what's up with these so I will reassign as NA
 indiana[which(indiana$size_t-floor(indiana$size_t)>0),"size_t"]<-NA
 indiana[which(indiana$size_t1-floor(indiana$size_t1)>0),"size_t1"]<-NA
@@ -177,9 +177,11 @@ table(indiana$age) #no there are way more 0s
 
 ## check that -1 ages are always cases with no data in year_t - FUCK
 indiana[which(indiana$age==-1 & !is.na(indiana$size_t)),]->bad_plants
-indiana %>% filter(id %in% bad_plants$id) %>% View
+#indiana %>% filter(id %in% bad_plants$id) %>% View
 ## note these are almost all 2017 birth year
-## not sure what is going on here, will come back to this -TM 3/23/25
+## I think this is OK, and that is reflect the idiosyncacry of
+## how the data transition happened in 2017/2018 at start of LTREB
+## As long as I filter -1 ages for age-specific estimates, it should be fine as is -TM 4/8/2025
 
 ## apply rule that if size is non-NA and inf count is NA, then inf count should be zero
 indiana$flw_count_t[!is.na(indiana$size_t) & is.na(indiana$flw_count_t)]<-0
@@ -197,9 +199,11 @@ indiana_no_problems <- indiana %>% filter(!(id %in% birthyears_ind$id))
 ##Bell sorted out most of the birth year problems (see Bell_birthyear_fixes.R)
 ##read in Bell's fixed data, then merge rows into main data
 birthyears_fixed<-read.csv("data prep/birth_year_fixes.csv")
+##update age with new birth years
+birthyears_fixed$age<-birthyears_fixed$year_t-birthyears_fixed$birth
 
-##prepare indiana data for row bind with poau data
-bind_rows(indiana_no_problems,birthyears_fixed) %>% 
+##prepare indiana data for row bind with poau data -- take only the comlumns that match
+bind_rows(indiana_no_problems,birthyears_fixed[,paste(names(indiana_no_problems))]) %>% 
   ##change org_rec so that original=1 / recruit=0
   mutate(original=abs(origin_01-1)) %>% 
   select(species,plot,endo_01,id,original,endo_status_from_check,birth,year_t,age,
