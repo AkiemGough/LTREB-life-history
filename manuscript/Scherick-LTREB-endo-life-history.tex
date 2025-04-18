@@ -190,7 +190,33 @@ Species-specific parameters $\alpha1^{j}$ and $\alpha2^{j}$ control the rate at 
 Note that the model is agnostic to \emph{how} endophytes effect the inflorescence-to-recruitment rate (e.g., through effects on seed number per inflorescence, seed germination rate, or seedling survival). 
 The covariate $inf_{k,l}$ was calculated for each plot by summing inflorescences across all individuals, including the original plants that are otherwise not included in these analyses, since their reproduction contributed to observed recruitment. 
 
+\subsubsection*{Age of first reproduction}
+While most life history traits were derived from the matrix models described below, there was one trait that we were able to estimate directly from the data: age of first reproduction. 
+To do so, we filtered the data to include only plants of known age that flowered at least once during our study. 
+We fit a Poisson model where the first flowering age of individual i of species j in plot k and year l ($y_{ijkl}$) was given by:
+\begin{align*}
+	y_{ijkl} ~ \sim Poisson(\lambda_{jkl})\\
+	log(\lambda_{jkl}) = \alpha^{j} + \beta^{j}*e_k + \rho_k + \tau^{j}_{l}\\
+	\rho_k \sim N(0,\sigma^2_{plot})\\
+	\tau^{j}_{l} \sim N(0,\sigma^2_{year})\\
+\end{align*}
+Following a similar structure as the models described above, parameters $\alpha^{j}$ and $\beta^{j}$ give, respectively, the expected age of first flowering and endophyte effects on flowering age for species j, and random effects $\rho_k$ and $\tau^{j}_{l}$ account for spatial and temporal non-independence of the flowering age observations. 
+
 \subsection*{Demographic modeling}
+We used matrix models to integrate statistical estimates of age-specific vital rates and recruitment into predictions for effects of endophyte symbiosis on host life history outcomes and fitness. 
+Following our statistical approach to parameter estimation, the matrix models blend age and stage such that newborn (0-yo) individuals progress in age conditional on survival, but may persist in an ``old'' age class if they reach it. 
+For stage-based matrix models of this type, theory based on Markov chains allows for the estimation of lifetime demographic events, even as ``lifetimes'' do not have a deterministic ceiling (cite). 
+
+The matrix models took the general form $\mathbf{n}_{t+1} = \mathbf{A}\mathbf{n}_{t}$, where $\mathbf{n}$ is a vector of population structure and $\mathbf{A}$ is a projection matrix describing all possible life cycle transitions (cite Caswell). 
+Because age structure varied across host species, the dimensions of $\mathbf{n}$ and $\mathbf{A}$ also varied by species. 
+Generally, let $G$ be the number of ages and age classes for a given species. 
+For example, for \textit{Poa alsodes} $G=3$ (ages 0, 1, and age class 2+). 
+Regeneration was modeled as recruitment per inflorescence from the preceding two years. 
+Therefore, the model additionally include one- and year-year inflorescence ``banks''. 
+The dimensions of $\mathbf{n}$ and $\mathbf{A}$ are therefore $(G+2) \times 1$ and $(G+2) \times (G+2)$, respectively. 
+
+
+
 
 \section*{Results}
 

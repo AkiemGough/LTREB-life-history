@@ -1,6 +1,6 @@
 data {
   int<lower=0> N;
-  int<lower=0> y[N];
+  int<lower=1> y[N];
   int<lower=0> n_spp;
   int<lower=0,upper=n_spp> species[N];
   int<lower=0,upper=1> endo[N];
@@ -29,11 +29,5 @@ real<lower=0> mu[N];
 model {
   to_vector(tau) ~ normal(0,sigma_year);
   rho ~ normal(0,sigma_plot);
-  y ~ poisson(mu);
+  y ~ poisson(mu) T[1,];
 }
-
-generated quantities {
-  int<lower = 0> y_sim[N];
-  y_sim = poisson_rng(mu);
-}
-

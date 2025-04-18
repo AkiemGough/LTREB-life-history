@@ -13,3 +13,4 @@ analysis/Stan/fert_fit.rds
 *.rds
 .Rhistory
 analysis/Stan/fert_fit.rds
+.Rhistory

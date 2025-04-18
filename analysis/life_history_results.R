@@ -1,53 +1,74 @@
 setwd("/Users/bell/Documents/GitHub/LTREB-life-history/analysis")
+setwd("C:/Users/tm9/Dropbox/github/LTREB-life-history")
 library(tidyverse)
-library(factoextra)
+library(vegan)
+#library(factoextra)
 ##read in life history outputs
-lifehistorypost<-read.csv("lifehistorypost.csv")
-age_first_repro =read.csv("first_age_repro")
+lifehistorypost<-read.csv("analysis/lifehistorypost.csv")
 
-age_first_repro <- age_first_repro %>%
-  arrange(endo)
-
-age_first_repro <- age_first_repro %>%
-  arrange(species)
 # PCA ---------------------------------------------------------------------
-
-## first reduce data frame down to averages
-lifehistorypostmean<-lifehistorypost %>% 
-  group_by(species) %>% 
-  summarise_all(mean) %>% select(-X)
-
+## need to pivot trait data from wide to long
 ## select traits that will go into PCA
-lifehistorypostmean %>% 
+lifehistorypost %>% 
   select(species,R0_em,R0_ep) %>% 
-  pivot_longer(R0_em:R0_ep,names_to="endo",values_to="R0")->R0
-lifehistorypostmean %>% 
+  pivot_longer(R0_em:R0_ep,names_to="endo",values_to="R0") %>% 
+  mutate(endo=case_when(endo=="R0_em"~"S-",endo=="R0_ep"~"S+"))->R0
+lifehistorypost %>% 
   select(species,G_em,G_ep) %>% 
-  pivot_longer(G_em:G_ep,names_to="endo",values_to="G")->G
-lifehistorypostmean %>% 
+  pivot_longer(G_em:G_ep,names_to="endo",values_to="G") %>% 
+  mutate(endo=case_when(endo=="G_em"~"S-",endo=="G_ep"~"S+"))->G
+lifehistorypost %>% 
   select(species,meanelexp_em,meanelexp_ep) %>% 
-  pivot_longer(meanelexp_em:meanelexp_ep,names_to="endo",values_to="meanelexp")->meanelexp
-lifehistorypostmean %>% 
+  pivot_longer(meanelexp_em:meanelexp_ep,names_to="endo",values_to="meanelexp") %>% 
+  mutate(endo=case_when(endo=="meanelexp_em"~"S-",endo=="meanelexp_ep"~"S+"))->meanelexp
+lifehistorypost %>% 
   select(species,matlifexp_em,matlifexp_ep) %>% 
-  pivot_longer(matlifexp_em:matlifexp_ep,names_to="endo",values_to="matlifexp")->matlifexp
-lifehistorypostmean %>% 
+  pivot_longer(matlifexp_em:matlifexp_ep,names_to="endo",values_to="matlifexp") %>% 
+  mutate(endo=case_when(endo=="matlifexp_em"~"S-",endo=="matlifexp_ep"~"S+"))->matlifexp
+lifehistorypost %>% 
   select(species,longevity_em,longevity_ep) %>% 
-  pivot_longer(longevity_em:longevity_ep,names_to="endo",values_to="longevity")->longevity
-lifehistorypostmean %>% 
+  pivot_longer(longevity_em:longevity_ep,names_to="endo",values_to="longevity") %>% 
+  mutate(endo=case_when(endo=="longevity_em"~"S-",endo=="longevity_ep"~"S+"))->longevity
+lifehistorypost %>% 
   select(species,entropyd_em,entropyd_ep) %>% 
-  pivot_longer(entropyd_em:entropyd_ep,names_to="endo",values_to="entropyd")->entropyd
+  pivot_longer(entropyd_em:entropyd_ep,names_to="endo",values_to="entropyd") %>% 
+  mutate(endo=case_when(endo=="entropyd_em"~"S-",endo=="entropyd_ep"~"S+"))->entropyd
+lifehistorypost %>% 
+  select(species,firstrepro_em,firstrepro_ep) %>% 
+  pivot_longer(firstrepro_em:firstrepro_ep,names_to="endo",values_to="firstrepro") %>% 
+  mutate(endo=case_when(endo=="firstrepro_em"~"S-",endo=="firstrepro_ep"~"S+"))->firstrepro
 
-pca.dat<-bind_cols(R0$R0,G$G,meanelexp$meanelexp,longevity$longevity,entropyd$entropyd, age_first_repro$min_repro)
-names(pca.dat)<-c("R0","Gen time","Life expect","Longevity","EntropyD","FirstRepro")
-row.names(pca.dat)<-c("AGPE-","AGPE+",
-                      "ELRI-","ELRI+",
-                      "ELVI-","ELVI+",
-                      "FESU-","FESU+",
-                      "POAL-","POAL+",
-                      "POAU-","POAU+",
-                      "POSY-","POSY+")
+pca.dat<-bind_cols(R0,G$G,meanelexp$meanelexp,longevity$longevity,entropyd$entropyd, firstrepro$firstrepro)
+names(pca.dat)<-c("Species","Endo","R0","Gen_time","Life_expect","Longevity","EntropyD","FirstRepro")
+#row.names(pca.dat)<-c("AGPE-","AGPE+",
+#                      "ELRI-","ELRI+",
+#                      "ELVI-","ELVI+",
+#                      "FESU-","FESU+",
+#                      "POAL-","POAL+",
+#                      "POAU-","POAU+",
+#                      "POSY-","POSY+")
 
-lifehistory_pca<-prcomp(pca.dat,scale=T)
+## first create a reference PCA from posterior means
+pca.dat %>% 
+  group_by(Species,Endo) %>% 
+  summarise_all(mean) -> mean.pca.dat
+
+## reference PCA
+lifehistory_pca_mean<-prcomp(mean.pca.dat[,-(1:2)],scale=T)
+lifehistory_pca_mean$rotation
+
+## now align posterior samples with respect to reference
+
+# From chatgpt:
+# Align PCA loadings from a sample to a reference using Procrustes rotation
+align_pca <- function(sample_loadings, ref_loadings) {
+  proc <- procrustes(ref_loadings, sample_loadings, symmetric = TRUE)
+  aligned <- proc$Yrot
+  return(aligned)
+}
+
+##first posterior draw
+
 plot(lifehistory_pca$x,pch=c(1,16))
 arrows(lifehistory_pca$x[c(1,3,5,7,9,11,13),1],
        lifehistory_pca$x[c(1,3,5,7,9,11,13),2],
@@ -86,6 +107,7 @@ lifehistorypost$entropyd_diff<-lifehistorypost$entropyd_ep-lifehistorypost$entro
 lifehistorypost$entropyk_diff<-lifehistorypost$entropyk_ep-lifehistorypost$entropyk_em
 lifehistorypost$gini_diff<-lifehistorypost$gini_ep-lifehistorypost$gini_em
 lifehistorypost$longevity_diff<-lifehistorypost$longevity_ep-lifehistorypost$longevity_em
+lifehistorypost$firstrepro_diff<-lifehistorypost$firstrepro_ep-lifehistorypost$firstrepro_em
 
 ## some quick and dirty plots of life history effects
 lifehistorypost %>% 
@@ -152,5 +174,9 @@ ggplot(lifehistorypost,aes(longevity_diff,fill=species,col=species))+
   geom_density(alpha=0.1)+geom_vline(xintercept=0)+
   facet_wrap(~species,scales="free")
 
+## longevity
+ggplot(lifehistorypost,aes(firstrepro_diff,fill=species,col=species))+
+  geom_density(alpha=0.1)+geom_vline(xintercept=0)+
+  facet_wrap(~species,scales="free")
 
                 
