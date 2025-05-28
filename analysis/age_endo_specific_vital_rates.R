@@ -38,6 +38,7 @@ ltreb<-ltreb_allplants %>%
 range(c(ltreb$year_t,ltreb$year_t1)) ##first recruits are tagged in 2009
 ##how many cohorts?
 length(unique(ltreb$year_t))
+ltreb %>% filter(age==0) %>% group_by(year_t) %>% summarise(n())
 ##how many total recruits?
 length(unique(ltreb$id))
   
@@ -320,154 +321,6 @@ Ps_em_surv <- apply(Ps_em_surv_post,2,quantile,probs=quantile_probs)
 Ps_ep_surv <- apply(Ps_ep_surv_post,2,quantile,probs=quantile_probs)
 propfx_Ps_surv<-(Ps_ep_surv_post - Ps_em_surv_post)/Ps_em_surv_post
 
-## nice figure
-jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500, res = 300)
-{par(mfrow=c(2,4),mar=c(4,4,2,1))
-plot(Ap_surv$age_lump,Ap_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-     xlim=c(-0.5,5.5),axes=F)
-points(jitter(Ap_surv$age_lump[Ap_surv$endo_01==0])-0.25,
-     jitter(Ap_surv$surv_t1[Ap_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Ap_surv$age_lump[Ap_surv$endo_01==1])+0.25,
-       jitter(Ap_surv$surv_t1[Ap_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((0:5)-.1,Ap_em_surv[3,1:6],pch=16,cex=2,col="tomato")
-arrows((0:5)-.1,Ap_em_surv[2,1:6],
-      (0:5)-.1,Ap_em_surv[4,1:6],length=0,lwd=3,col="tomato")
-arrows((0:5)-.1,Ap_em_surv[1,1:6],
-       (0:5)-.1,Ap_em_surv[5,1:6],length=0,lwd=1,col="tomato")
-points((0:5)+.1,Ap_ep_surv[3,1:6],pch=16,cex=2,col="cornflowerblue")
-arrows((0:5)+.1,Ap_ep_surv[2,1:6],
-       (0:5)+.1,Ap_ep_surv[4,1:6],length=0,lwd=3,col="cornflowerblue")
-arrows((0:5)+.1,Ap_ep_surv[1,1:6],
-       (0:5)+.1,Ap_ep_surv[5,1:6],length=0,lwd=1,col="cornflowerblue")
-title(expression("A) "*italic("Agrostis perennans")),adj=0)
-axis(1,at=0:5,labels=c("0","1","2","3","4","5+"))
-axis(2,at=c(0,0.25,0.5,0.75,1))
-
-plot(Er_surv$age_lump,Er_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-     xlim=c(-0.5,2.5),axes=F)
-points(jitter(Er_surv$age_lump[Er_surv$endo_01==0])-0.25,
-       jitter(Er_surv$surv_t1[Er_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Er_surv$age_lump[Er_surv$endo_01==1])+0.25,
-       jitter(Er_surv$surv_t1[Er_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((0:2)-.1,Er_em_surv[3,1:3],pch=16,cex=2,col="tomato")
-arrows((0:2)-.1,Er_em_surv[2,1:3],
-       (0:2)-.1,Er_em_surv[4,1:3],length=0,lwd=3,col="tomato")
-arrows((0:2)-.1,Er_em_surv[1,1:3],
-       (0:2)-.1,Er_em_surv[5,1:3],length=0,lwd=1,col="tomato")
-points((0:2)+.1,Er_ep_surv[3,1:3],pch=16,cex=2,col="cornflowerblue")
-arrows((0:2)+.1,Er_ep_surv[2,1:3],
-       (0:2)+.1,Er_ep_surv[4,1:3],length=0,lwd=3,col="cornflowerblue")
-arrows((0:2)+.1,Er_ep_surv[1,1:3],
-       (0:2)+.1,Er_ep_surv[5,1:3],length=0,lwd=1,col="cornflowerblue")
-title(expression("B) "*italic("Elymus villosus")),adj=0)
-axis(1,at=0:2,labels=c("0","1","2+"))
-axis(2,at=c(0,0.25,0.5,0.75,1))
-
-plot(Ev_surv$age_lump,Ev_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-     xlim=c(-0.5,3.5),axes=F)
-points(jitter(Ev_surv$age_lump[Ev_surv$endo_01==0])-0.25,
-       jitter(Ev_surv$surv_t1[Ev_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Ev_surv$age_lump[Ev_surv$endo_01==1])+0.25,
-       jitter(Ev_surv$surv_t1[Ev_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((0:3)-.1,Ev_em_surv[3,1:4],pch=16,cex=2,col="tomato")
-arrows((0:3)-.1,Ev_em_surv[2,1:4],
-       (0:3)-.1,Ev_em_surv[4,1:4],length=0,lwd=3,col="tomato")
-arrows((0:3)-.1,Ev_em_surv[1,1:4],
-       (0:3)-.1,Ev_em_surv[5,1:4],length=0,lwd=1,col="tomato")
-points((0:3)+.1,Ev_ep_surv[3,1:4],pch=16,cex=2,col="cornflowerblue")
-arrows((0:3)+.1,Ev_ep_surv[2,1:4],
-       (0:3)+.1,Ev_ep_surv[4,1:4],length=0,lwd=3,col="cornflowerblue")
-arrows((0:3)+.1,Ev_ep_surv[1,1:4],
-       (0:3)+.1,Ev_ep_surv[5,1:4],length=0,lwd=1,col="cornflowerblue")
-title(expression("C) "*italic("Elymus virginicus")),adj=0)
-axis(1,at=0:3,labels=c("0","1","2","3+"))
-axis(2,at=c(0,0.25,0.5,0.75,1))
-
-plot(Fs_surv$age_lump,Fs_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-     xlim=c(-0.5,5.5),axes=F)
-points(jitter(Fs_surv$age_lump[Fs_surv$endo_01==0])-0.25,
-       jitter(Fs_surv$surv_t1[Fs_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Fs_surv$age_lump[Fs_surv$endo_01==1])+0.25,
-       jitter(Fs_surv$surv_t1[Fs_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((0:5)-.1,Fs_em_surv[3,1:6],pch=16,cex=2,col="tomato")
-arrows((0:5)-.1,Fs_em_surv[2,1:6],
-       (0:5)-.1,Fs_em_surv[4,1:6],length=0,lwd=3,col="tomato")
-arrows((0:5)-.1,Fs_em_surv[1,1:6],
-       (0:5)-.1,Fs_em_surv[5,1:6],length=0,lwd=1,col="tomato")
-points((0:5)+.1,Fs_ep_surv[3,1:6],pch=16,cex=2,col="cornflowerblue")
-arrows((0:5)+.1,Fs_ep_surv[2,1:6],
-       (0:5)+.1,Fs_ep_surv[4,1:6],length=0,lwd=3,col="cornflowerblue")
-arrows((0:5)+.1,Fs_ep_surv[1,1:6],
-       (0:5)+.1,Fs_ep_surv[5,1:6],length=0,lwd=1,col="cornflowerblue")
-title(expression("D) "*italic("Festuca subverticillata")),adj=0)
-axis(1,at=0:5,labels=c("0","1","2","3","4","5+"))
-axis(2,at=c(0,0.25,0.5,0.75,1))
-
-plot(Pa_surv$age_lump,Pa_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-     xlim=c(-0.5,2.5),axes=F)
-points(jitter(Pa_surv$age_lump[Pa_surv$endo_01==0])-0.25,
-       jitter(Pa_surv$surv_t1[Pa_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Pa_surv$age_lump[Pa_surv$endo_01==1])+0.25,
-       jitter(Pa_surv$surv_t1[Pa_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((0:2)-.1,Pa_em_surv[3,1:3],pch=16,cex=2,col="tomato")
-arrows((0:2)-.1,Pa_em_surv[2,1:3],
-       (0:2)-.1,Pa_em_surv[4,1:3],length=0,lwd=3,col="tomato")
-arrows((0:2)-.1,Pa_em_surv[1,1:3],
-       (0:2)-.1,Pa_em_surv[5,1:3],length=0,lwd=1,col="tomato")
-points((0:2)+.1,Pa_ep_surv[3,1:3],pch=16,cex=2,col="cornflowerblue")
-arrows((0:2)+.1,Pa_ep_surv[2,1:3],
-       (0:2)+.1,Pa_ep_surv[4,1:3],length=0,lwd=3,col="cornflowerblue")
-arrows((0:2)+.1,Pa_ep_surv[1,1:3],
-       (0:2)+.1,Pa_ep_surv[5,1:3],length=0,lwd=1,col="cornflowerblue")
-title(expression("E) "*italic("Poa alsodes")),adj=0)
-axis(1,at=0:2,labels=c("0","1","2+"))
-axis(2,at=c(0,0.25,0.5,0.75,1))
-
-plot(Pu_surv$age_lump,Pu_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-     xlim=c(-0.5,4.5),axes=F)
-points(jitter(Pu_surv$age_lump[Pu_surv$endo_01==0])-0.25,
-       jitter(Pu_surv$surv_t1[Pu_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Pu_surv$age_lump[Pu_surv$endo_01==1])+0.25,
-       jitter(Pu_surv$surv_t1[Pu_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((0:4)-.1,Pu_em_surv[3,1:5],pch=16,cex=2,col="tomato")
-arrows((0:4)-.1,Pu_em_surv[2,1:5],
-       (0:4)-.1,Pu_em_surv[4,1:5],length=0,lwd=3,col="tomato")
-arrows((0:4)-.1,Pu_em_surv[1,1:5],
-       (0:4)-.1,Pu_em_surv[5,1:5],length=0,lwd=1,col="tomato")
-points((0:4)+.1,Pu_ep_surv[3,1:5],pch=16,cex=2,col="cornflowerblue")
-arrows((0:4)+.1,Pu_ep_surv[2,1:5],
-       (0:4)+.1,Pu_ep_surv[4,1:5],length=0,lwd=3,col="cornflowerblue")
-arrows((0:4)+.1,Pu_ep_surv[1,1:5],
-       (0:4)+.1,Pu_ep_surv[5,1:5],length=0,lwd=1,col="cornflowerblue")
-title(expression("F) "*italic("Poa autumnalis")),adj=0)
-axis(1,at=0:4,labels=c("0","1","2","3","4+"))
-axis(2,at=c(0,0.25,0.5,0.75,1))
-
-plot(Ps_surv$age_lump,Ps_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-     xlim=c(-0.5,7.5),axes=F)
-points(jitter(Ps_surv$age_lump[Ps_surv$endo_01==0])-0.25,
-       jitter(Ps_surv$surv_t1[Ps_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Ps_surv$age_lump[Ps_surv$endo_01==1])+0.25,
-       jitter(Ps_surv$surv_t1[Ps_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((0:7)-.1,Ps_em_surv[3,1:8],pch=16,cex=2,col="tomato")
-arrows((0:7)-.1,Ps_em_surv[2,1:8],
-       (0:7)-.1,Ps_em_surv[4,1:8],length=0,lwd=3,col="tomato")
-arrows((0:7)-.1,Ps_em_surv[1,1:8],
-       (0:7)-.1,Ps_em_surv[5,1:8],length=0,lwd=1,col="tomato")
-points((0:7)+.1,Ps_ep_surv[3,1:8],pch=16,cex=2,col="cornflowerblue")
-arrows((0:7)+.1,Ps_ep_surv[2,1:8],
-       (0:7)+.1,Ps_ep_surv[4,1:8],length=0,lwd=3,col="cornflowerblue")
-arrows((0:7)+.1,Ps_ep_surv[1,1:8],
-       (0:7)+.1,Ps_ep_surv[5,1:8],length=0,lwd=1,col="cornflowerblue")
-title(expression("G) "*italic("Poa sylvestris")),adj=0)
-axis(1,at=0:7,labels=c("0","1","2","3","4","5","6","7+"))
-axis(2,at=c(0,0.25,0.5,0.75,1))
-
-plot(0,0,type="n",axes=F,xlab=" ",ylab=" ")
-legend("left",legend=c("S-","S+"),col=c("tomato","cornflowerblue"),pch=16,cex=2)
-}
-dev.off()
-
 ##visualize proportional endo effects across standardized age
 # Define covariate levels (x-axis)
 relage_Ap <- 0:5/5; colnames(propfx_Ap_surv)<-relage_Ap
@@ -547,6 +400,169 @@ probpos_survival<-ggplot(posterior_summary_surv)+
          axis.title = element_text(size = 16)   
        )
 #ggsave("manuscript/figures/probpos_survival.jpg")
+
+spp_list<-c("AGPE","ELRI","ELVI","FESU","POAL","POAU","POSY")
+species_colors<-rainbow(length(spp_list))
+
+## nice figure
+jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500, res = 300)
+{par(mfrow=c(2,4),mar=c(4,4,2,1))
+  plot(Ap_surv$age_lump,Ap_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
+       xlim=c(-0.5,5.5),axes=F)
+  points(jitter(Ap_surv$age_lump[Ap_surv$endo_01==0])-0.25,
+         jitter(Ap_surv$surv_t1[Ap_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Ap_surv$age_lump[Ap_surv$endo_01==1])+0.25,
+         jitter(Ap_surv$surv_t1[Ap_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((0:5)-.1,Ap_em_surv[3,1:6],pch=16,cex=2,col="tomato")
+  arrows((0:5)-.1,Ap_em_surv[2,1:6],
+         (0:5)-.1,Ap_em_surv[4,1:6],length=0,lwd=3,col="tomato")
+  arrows((0:5)-.1,Ap_em_surv[1,1:6],
+         (0:5)-.1,Ap_em_surv[5,1:6],length=0,lwd=1,col="tomato")
+  points((0:5)+.1,Ap_ep_surv[3,1:6],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:5)+.1,Ap_ep_surv[2,1:6],
+         (0:5)+.1,Ap_ep_surv[4,1:6],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:5)+.1,Ap_ep_surv[1,1:6],
+         (0:5)+.1,Ap_ep_surv[5,1:6],length=0,lwd=1,col="cornflowerblue")
+  title(expression("A) "*italic("Agrostis perennans")*" (AGPE)"),adj=0)
+  axis(1,at=0:5,labels=c("0","1","2","3","4","5+"))
+  axis(2,at=c(0,0.25,0.5,0.75,1))
+  legend(-0.5,0.9,c("S+","S-"),pch=16,col=c("cornflowerblue","tomato"))
+  
+  plot(Er_surv$age_lump,Er_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
+       xlim=c(-0.5,2.5),axes=F)
+  points(jitter(Er_surv$age_lump[Er_surv$endo_01==0])-0.25,
+         jitter(Er_surv$surv_t1[Er_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Er_surv$age_lump[Er_surv$endo_01==1])+0.25,
+         jitter(Er_surv$surv_t1[Er_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((0:2)-.1,Er_em_surv[3,1:3],pch=16,cex=2,col="tomato")
+  arrows((0:2)-.1,Er_em_surv[2,1:3],
+         (0:2)-.1,Er_em_surv[4,1:3],length=0,lwd=3,col="tomato")
+  arrows((0:2)-.1,Er_em_surv[1,1:3],
+         (0:2)-.1,Er_em_surv[5,1:3],length=0,lwd=1,col="tomato")
+  points((0:2)+.1,Er_ep_surv[3,1:3],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:2)+.1,Er_ep_surv[2,1:3],
+         (0:2)+.1,Er_ep_surv[4,1:3],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:2)+.1,Er_ep_surv[1,1:3],
+         (0:2)+.1,Er_ep_surv[5,1:3],length=0,lwd=1,col="cornflowerblue")
+  title(expression("B) "*italic("Elymus villosus")*" (ELRI)"),adj=0)
+  axis(1,at=0:2,labels=c("0","1","2+"))
+  axis(2,at=c(0,0.25,0.5,0.75,1))
+  
+  plot(Ev_surv$age_lump,Ev_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
+       xlim=c(-0.5,3.5),axes=F)
+  points(jitter(Ev_surv$age_lump[Ev_surv$endo_01==0])-0.25,
+         jitter(Ev_surv$surv_t1[Ev_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Ev_surv$age_lump[Ev_surv$endo_01==1])+0.25,
+         jitter(Ev_surv$surv_t1[Ev_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((0:3)-.1,Ev_em_surv[3,1:4],pch=16,cex=2,col="tomato")
+  arrows((0:3)-.1,Ev_em_surv[2,1:4],
+         (0:3)-.1,Ev_em_surv[4,1:4],length=0,lwd=3,col="tomato")
+  arrows((0:3)-.1,Ev_em_surv[1,1:4],
+         (0:3)-.1,Ev_em_surv[5,1:4],length=0,lwd=1,col="tomato")
+  points((0:3)+.1,Ev_ep_surv[3,1:4],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:3)+.1,Ev_ep_surv[2,1:4],
+         (0:3)+.1,Ev_ep_surv[4,1:4],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:3)+.1,Ev_ep_surv[1,1:4],
+         (0:3)+.1,Ev_ep_surv[5,1:4],length=0,lwd=1,col="cornflowerblue")
+  title(expression("C) "*italic("Elymus virginicus")*" (ELVI)"),adj=0)
+  axis(1,at=0:3,labels=c("0","1","2","3+"))
+  axis(2,at=c(0,0.25,0.5,0.75,1))
+  
+  plot(Fs_surv$age_lump,Fs_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
+       xlim=c(-0.5,5.5),axes=F)
+  points(jitter(Fs_surv$age_lump[Fs_surv$endo_01==0])-0.25,
+         jitter(Fs_surv$surv_t1[Fs_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Fs_surv$age_lump[Fs_surv$endo_01==1])+0.25,
+         jitter(Fs_surv$surv_t1[Fs_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((0:5)-.1,Fs_em_surv[3,1:6],pch=16,cex=2,col="tomato")
+  arrows((0:5)-.1,Fs_em_surv[2,1:6],
+         (0:5)-.1,Fs_em_surv[4,1:6],length=0,lwd=3,col="tomato")
+  arrows((0:5)-.1,Fs_em_surv[1,1:6],
+         (0:5)-.1,Fs_em_surv[5,1:6],length=0,lwd=1,col="tomato")
+  points((0:5)+.1,Fs_ep_surv[3,1:6],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:5)+.1,Fs_ep_surv[2,1:6],
+         (0:5)+.1,Fs_ep_surv[4,1:6],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:5)+.1,Fs_ep_surv[1,1:6],
+         (0:5)+.1,Fs_ep_surv[5,1:6],length=0,lwd=1,col="cornflowerblue")
+  title(expression("D) "*italic("Festuca subverticillata")*" (FESU)"),adj=0)
+  axis(1,at=0:5,labels=c("0","1","2","3","4","5+"))
+  axis(2,at=c(0,0.25,0.5,0.75,1))
+  
+  plot(Pa_surv$age_lump,Pa_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
+       xlim=c(-0.5,2.5),axes=F)
+  points(jitter(Pa_surv$age_lump[Pa_surv$endo_01==0])-0.25,
+         jitter(Pa_surv$surv_t1[Pa_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Pa_surv$age_lump[Pa_surv$endo_01==1])+0.25,
+         jitter(Pa_surv$surv_t1[Pa_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((0:2)-.1,Pa_em_surv[3,1:3],pch=16,cex=2,col="tomato")
+  arrows((0:2)-.1,Pa_em_surv[2,1:3],
+         (0:2)-.1,Pa_em_surv[4,1:3],length=0,lwd=3,col="tomato")
+  arrows((0:2)-.1,Pa_em_surv[1,1:3],
+         (0:2)-.1,Pa_em_surv[5,1:3],length=0,lwd=1,col="tomato")
+  points((0:2)+.1,Pa_ep_surv[3,1:3],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:2)+.1,Pa_ep_surv[2,1:3],
+         (0:2)+.1,Pa_ep_surv[4,1:3],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:2)+.1,Pa_ep_surv[1,1:3],
+         (0:2)+.1,Pa_ep_surv[5,1:3],length=0,lwd=1,col="cornflowerblue")
+  title(expression("E) "*italic("Poa alsodes")*" (POAL)"),adj=0)
+  axis(1,at=0:2,labels=c("0","1","2+"))
+  axis(2,at=c(0,0.25,0.5,0.75,1))
+  
+  plot(Pu_surv$age_lump,Pu_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
+       xlim=c(-0.5,4.5),axes=F)
+  points(jitter(Pu_surv$age_lump[Pu_surv$endo_01==0])-0.25,
+         jitter(Pu_surv$surv_t1[Pu_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Pu_surv$age_lump[Pu_surv$endo_01==1])+0.25,
+         jitter(Pu_surv$surv_t1[Pu_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((0:4)-.1,Pu_em_surv[3,1:5],pch=16,cex=2,col="tomato")
+  arrows((0:4)-.1,Pu_em_surv[2,1:5],
+         (0:4)-.1,Pu_em_surv[4,1:5],length=0,lwd=3,col="tomato")
+  arrows((0:4)-.1,Pu_em_surv[1,1:5],
+         (0:4)-.1,Pu_em_surv[5,1:5],length=0,lwd=1,col="tomato")
+  points((0:4)+.1,Pu_ep_surv[3,1:5],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:4)+.1,Pu_ep_surv[2,1:5],
+         (0:4)+.1,Pu_ep_surv[4,1:5],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:4)+.1,Pu_ep_surv[1,1:5],
+         (0:4)+.1,Pu_ep_surv[5,1:5],length=0,lwd=1,col="cornflowerblue")
+  title(expression("F) "*italic("Poa autumnalis")*" (POAU)"),adj=0)
+  axis(1,at=0:4,labels=c("0","1","2","3","4+"))
+  axis(2,at=c(0,0.25,0.5,0.75,1))
+  
+  plot(Ps_surv$age_lump,Ps_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
+       xlim=c(-0.5,7.5),axes=F)
+  points(jitter(Ps_surv$age_lump[Ps_surv$endo_01==0])-0.25,
+         jitter(Ps_surv$surv_t1[Ps_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Ps_surv$age_lump[Ps_surv$endo_01==1])+0.25,
+         jitter(Ps_surv$surv_t1[Ps_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((0:7)-.1,Ps_em_surv[3,1:8],pch=16,cex=2,col="tomato")
+  arrows((0:7)-.1,Ps_em_surv[2,1:8],
+         (0:7)-.1,Ps_em_surv[4,1:8],length=0,lwd=3,col="tomato")
+  arrows((0:7)-.1,Ps_em_surv[1,1:8],
+         (0:7)-.1,Ps_em_surv[5,1:8],length=0,lwd=1,col="tomato")
+  points((0:7)+.1,Ps_ep_surv[3,1:8],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:7)+.1,Ps_ep_surv[2,1:8],
+         (0:7)+.1,Ps_ep_surv[4,1:8],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:7)+.1,Ps_ep_surv[1,1:8],
+         (0:7)+.1,Ps_ep_surv[5,1:8],length=0,lwd=1,col="cornflowerblue")
+  title(expression("G) "*italic("Poa sylvestris")*" (POSY)"),adj=0)
+  axis(1,at=0:7,labels=c("0","1","2","3","4","5","6","7+"))
+  axis(2,at=c(0,0.25,0.5,0.75,1))
+  
+  plot(NA, xlim = range(posterior_summary_surv$relage), 
+       ylim = c(0, 1),
+       xlab = "Relative age", 
+       ylab = "Probability of positive symbiont effect")
+  abline(h = 0.5, lty = 2)  # line at 0
+  title(expression("H) All species"),adj=0)
+  for(sp in 1:length(spp_list)){
+    lines(posterior_summary_surv$relage[posterior_summary_surv$species==spp_list[sp]],
+          posterior_summary_surv$prob_pos[posterior_summary_surv$species==spp_list[sp]], 
+          col = species_colors[sp], lwd = 2) 
+  }
+  legend("bottomright", legend = spp_list, col = species_colors,
+         lty = 1, lwd = 2, cex = 0.5)
+}
+dev.off()
 
 # fertility model --------------intercept = # fertility model ---------------------------------------------------------
 ## do zero-year-olds ever flower?
@@ -797,153 +813,6 @@ Ps_em_fert<-apply(Ps_em_fert_post,2,quantile,probs=quantile_probs)
 Ps_ep_fert<-apply(Ps_ep_fert_post,2,quantile,probs=quantile_probs)
 propfx_Ps_fert<-(Ps_ep_fert_post - Ps_em_fert_post)/Ps_em_fert_post
 
-jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 1500, res = 300)
-{par(mfrow=c(2,4),mar=c(4,4,2,1))
-ylim_quantile<-0.95
-plot(Ap_fert$age_lump,Ap_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-     xlim=c(0.5,5.5),ylim=c(0,quantile(Ap_fert$flw_count_t,ylim_quantile)),axes=F)
-points(jitter(Ap_fert$age_lump[Ap_fert$endo_01==0])-0.25,
-       jitter(Ap_fert$flw_count_t[Ap_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Ap_fert$age_lump[Ap_fert$endo_01==1])+0.25,
-       jitter(Ap_fert$flw_count_t[Ap_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((1:5)-.1,Ap_em_fert[3,1:5],pch=16,cex=2,col="tomato")
-arrows((1:5)-.1,Ap_em_fert[2,1:5],
-       (1:5)-.1,Ap_em_fert[4,1:5],length=0,lwd=3,col="tomato")
-arrows((1:5)-.1,Ap_em_fert[1,1:5],
-       (1:5)-.1,Ap_em_fert[5,1:5],length=0,lwd=1,col="tomato")
-points((1:5)+.1,Ap_ep_fert[3,1:5],pch=16,cex=2,col="cornflowerblue")
-arrows((1:5)+.1,Ap_ep_fert[2,1:5],
-       (1:5)+.1,Ap_ep_fert[4,1:5],length=0,lwd=3,col="cornflowerblue")
-arrows((1:5)+.1,Ap_ep_fert[1,1:5],
-       (1:5)+.1,Ap_ep_fert[5,1:5],length=0,lwd=1,col="cornflowerblue")
-title(expression("A) "*italic("Agrostis perennans")),adj=0)
-axis(1,at=1:5,labels=c("1","2","3","4","5+"))
-axis(2,at=0:round(quantile(Ap_fert$flw_count_t,ylim_quantile)))
-
-plot(Er_fert$age_lump,Er_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-     xlim=c(0.5,2.5),ylim=c(0,quantile(Er_fert$flw_count_t,ylim_quantile)),axes=F)
-points(jitter(Er_fert$age_lump[Er_fert$endo_01==0])-0.25,
-       jitter(Er_fert$flw_count_t[Er_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Er_fert$age_lump[Er_fert$endo_01==1])+0.25,
-       jitter(Er_fert$flw_count_t[Er_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((1:2)-.1,Er_em_fert[3,1:2],pch=16,cex=2,col="tomato")
-arrows((1:2)-.1,Er_em_fert[2,1:2],
-       (1:2)-.1,Er_em_fert[4,1:2],length=0,lwd=3,col="tomato")
-arrows((1:2)-.1,Er_em_fert[1,1:2],
-       (1:2)-.1,Er_em_fert[5,1:2],length=0,lwd=1,col="tomato")
-points((1:2)+.1,Er_ep_fert[3,1:2],pch=16,cex=2,col="cornflowerblue")
-arrows((1:2)+.1,Er_ep_fert[2,1:2],
-       (1:2)+.1,Er_ep_fert[4,1:2],length=0,lwd=3,col="cornflowerblue")
-arrows((1:2)+.1,Er_ep_fert[1,1:2],
-       (1:2)+.1,Er_ep_fert[5,1:2],length=0,lwd=1,col="cornflowerblue")
-title(expression("B) "*italic("Elymus villosus")),adj=0)
-axis(1,at=1:2,labels=c("1","2+"))
-axis(2,at=0:round(quantile(Er_fert$flw_count_t,ylim_quantile)))
-
-plot(Ev_fert$age_lump,Ev_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-     xlim=c(0.5,3.5),ylim=c(0,quantile(Ev_fert$flw_count_t,ylim_quantile)),axes=F)
-points(jitter(Ev_fert$age_lump[Ev_fert$endo_01==0])-0.25,
-       jitter(Ev_fert$flw_count_t[Ev_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Ev_fert$age_lump[Ev_fert$endo_01==1])+0.25,
-       jitter(Ev_fert$flw_count_t[Ev_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((1:3)-.1,Ev_em_fert[3,1:3],pch=16,cex=2,col="tomato")
-arrows((1:3)-.1,Ev_em_fert[2,1:3],
-       (1:3)-.1,Ev_em_fert[4,1:3],length=0,lwd=3,col="tomato")
-arrows((1:3)-.1,Ev_em_fert[1,1:3],
-       (1:3)-.1,Ev_em_fert[5,1:3],length=0,lwd=1,col="tomato")
-points((1:3)+.1,Ev_ep_fert[3,1:3],pch=16,cex=2,col="cornflowerblue")
-arrows((1:3)+.1,Ev_ep_fert[2,1:3],
-       (1:3)+.1,Ev_ep_fert[4,1:3],length=0,lwd=3,col="cornflowerblue")
-arrows((1:3)+.1,Ev_ep_fert[1,1:3],
-       (1:3)+.1,Ev_ep_fert[5,1:3],length=0,lwd=1,col="cornflowerblue")
-title(expression("C) "*italic("Elymus virginicus")),adj=0)
-axis(1,at=1:3,labels=c("1","2","3+"))
-axis(2,at=0:round(quantile(Ev_fert$flw_count_t,ylim_quantile)))
-
-plot(Fs_fert$age_lump,Fs_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-     xlim=c(0.5,5.5),ylim=c(0,quantile(Fs_fert$flw_count_t,ylim_quantile)),axes=F)
-points(jitter(Fs_fert$age_lump[Fs_fert$endo_01==0])-0.25,
-       jitter(Fs_fert$flw_count_t[Fs_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Fs_fert$age_lump[Fs_fert$endo_01==1])+0.25,
-       jitter(Fs_fert$flw_count_t[Fs_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((1:5)-.1,Fs_em_fert[3,1:5],pch=16,cex=2,col="tomato")
-arrows((1:5)-.1,Fs_em_fert[2,1:5],
-       (1:5)-.1,Fs_em_fert[4,1:5],length=0,lwd=3,col="tomato")
-arrows((1:5)-.1,Fs_em_fert[1,1:5],
-       (1:5)-.1,Fs_em_fert[5,1:5],length=0,lwd=1,col="tomato")
-points((1:5)+.1,Fs_ep_fert[3,1:5],pch=16,cex=2,col="cornflowerblue")
-arrows((1:5)+.1,Fs_ep_fert[2,1:5],
-       (1:5)+.1,Fs_ep_fert[4,1:5],length=0,lwd=3,col="cornflowerblue")
-arrows((1:5)+.1,Fs_ep_fert[1,1:5],
-       (1:5)+.1,Fs_ep_fert[5,1:5],length=0,lwd=1,col="cornflowerblue")
-title(expression("D) "*italic("Festuca subverticillata")),adj=0)
-axis(1,at=1:5,labels=c("1","2","3","4","5+"))
-axis(2,at=0:round(quantile(Fs_fert$flw_count_t,ylim_quantile)))
-
-plot(Pa_fert$age_lump,Pa_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-     xlim=c(0.5,2.5),ylim=c(0,quantile(Pa_fert$flw_count_t,ylim_quantile)),axes=F)
-points(jitter(Pa_fert$age_lump[Pa_fert$endo_01==0])-0.25,
-       jitter(Pa_fert$flw_count_t[Pa_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Pa_fert$age_lump[Pa_fert$endo_01==1])+0.25,
-       jitter(Pa_fert$flw_count_t[Pa_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((1:2)-.1,Pa_em_fert[3,1:2],pch=16,cex=2,col="tomato")
-arrows((1:2)-.1,Pa_em_fert[2,1:2],
-       (1:2)-.1,Pa_em_fert[4,1:2],length=0,lwd=3,col="tomato")
-arrows((1:2)-.1,Pa_em_fert[1,1:2],
-       (1:2)-.1,Pa_em_fert[5,1:2],length=0,lwd=1,col="tomato")
-points((1:2)+.1,Pa_ep_fert[3,1:2],pch=16,cex=2,col="cornflowerblue")
-arrows((1:2)+.1,Pa_ep_fert[2,1:2],
-       (1:2)+.1,Pa_ep_fert[4,1:2],length=0,lwd=3,col="cornflowerblue")
-arrows((1:2)+.1,Pa_ep_fert[1,1:2],
-       (1:2)+.1,Pa_ep_fert[5,1:2],length=0,lwd=1,col="cornflowerblue")
-title(expression("E) "*italic("Poa alsodes")),adj=0)
-axis(1,at=1:2,labels=c("1","2+"))
-axis(2,at=0:round(quantile(Pa_fert$flw_count_t,ylim_quantile)))
-##note different y lim for Pu
-plot(Pu_fert$age_lump,Pu_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-     xlim=c(0.5,4.5),ylim=c(0,quantile(Pu_fert$flw_count_t,ylim_quantile)),axes=F)
-points(jitter(Pu_fert$age_lump[Pu_fert$endo_01==0])-0.25,
-       jitter(Pu_fert$flw_count_t[Pu_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Pu_fert$age_lump[Pu_fert$endo_01==1])+0.25,
-       jitter(Pu_fert$flw_count_t[Pu_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((1:4)-.1,Pu_em_fert[3,1:4],pch=16,cex=2,col="tomato")
-arrows((1:4)-.1,Pu_em_fert[2,1:4],
-       (1:4)-.1,Pu_em_fert[4,1:4],length=0,lwd=3,col="tomato")
-arrows((1:4)-.1,Pu_em_fert[1,1:4],
-       (1:4)-.1,Pu_em_fert[5,1:4],length=0,lwd=1,col="tomato")
-points((1:4)+.1,Pu_ep_fert[3,1:4],pch=16,cex=2,col="cornflowerblue")
-arrows((1:4)+.1,Pu_ep_fert[2,1:4],
-       (1:4)+.1,Pu_ep_fert[4,1:4],length=0,lwd=3,col="cornflowerblue")
-arrows((1:4)+.1,Pu_ep_fert[1,1:4],
-       (1:4)+.1,Pu_ep_fert[5,1:4],length=0,lwd=1,col="cornflowerblue")
-title(expression("F) "*italic("Poa autumnalis")),adj=0)
-axis(1,at=1:4,labels=c("1","2","3","4+"))
-axis(2,at=0:round(quantile(Pu_fert$flw_count_t,ylim_quantile)))
-
-plot(Ps_fert$age_lump,Ps_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-     xlim=c(0.5,7.5),ylim=c(0,quantile(Ps_fert$flw_count_t,ylim_quantile)),axes=F)
-points(jitter(Ps_fert$age_lump[Ps_fert$endo_01==0])-0.25,
-       jitter(Ps_fert$flw_count_t[Ps_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
-points(jitter(Ps_fert$age_lump[Ps_fert$endo_01==1])+0.25,
-       jitter(Ps_fert$flw_count_t[Ps_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-points((1:7)-.1,Ps_em_fert[3,1:7],pch=16,cex=2,col="tomato")
-arrows((1:7)-.1,Ps_em_fert[2,1:7],
-       (1:7)-.1,Ps_em_fert[4,1:7],length=0,lwd=3,col="tomato")
-arrows((1:7)-.1,Ps_em_fert[1,1:7],
-       (1:7)-.1,Ps_em_fert[5,1:7],length=0,lwd=1,col="tomato")
-points((1:7)+.1,Ps_ep_fert[3,1:7],pch=16,cex=2,col="cornflowerblue")
-arrows((1:7)+.1,Ps_ep_fert[2,1:7],
-       (1:7)+.1,Ps_ep_fert[4,1:7],length=0,lwd=3,col="cornflowerblue")
-arrows((1:7)+.1,Ps_ep_fert[1,1:7],
-       (1:7)+.1,Ps_ep_fert[5,1:7],length=0,lwd=1,col="cornflowerblue")
-title(expression("G) "*italic("Poa sylvestris")),adj=0)
-axis(1,at=1:7,labels=c("1","2","3","4","5","6","7+"))
-axis(2,at=0:round(quantile(Ps_fert$flw_count_t,ylim_quantile)))
-
-plot(0,0,type="n",axes=F,xlab=" ",ylab=" ")
-legend("left",legend=c("S-","S+"),col=c("tomato","cornflowerblue"),pch=16,cex=2)}
-dev.off()
-
 # Define covariate levels (x-axis)
 colnames(propfx_Ap_fert)<-relage_Ap[-1]
 colnames(propfx_Er_fert)<-relage_Er[-1]
@@ -1023,6 +892,168 @@ probpos_fertility <- ggplot(posterior_summary_fert)+
   )
 probpos_survival + probpos_fertility
 #ggsave("manuscript/figures/probpos_fertility.jpg")
+
+
+jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 1500, res = 300)
+{par(mfrow=c(2,4),mar=c(4,4,2,1))
+  ylim_quantile<-0.95
+  plot(Ap_fert$age_lump,Ap_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
+       xlim=c(0.5,5.5),ylim=c(0,quantile(Ap_fert$flw_count_t,ylim_quantile)),axes=F)
+  points(jitter(Ap_fert$age_lump[Ap_fert$endo_01==0])-0.25,
+         jitter(Ap_fert$flw_count_t[Ap_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Ap_fert$age_lump[Ap_fert$endo_01==1])+0.25,
+         jitter(Ap_fert$flw_count_t[Ap_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((1:5)-.1,Ap_em_fert[3,1:5],pch=16,cex=2,col="tomato")
+  arrows((1:5)-.1,Ap_em_fert[2,1:5],
+         (1:5)-.1,Ap_em_fert[4,1:5],length=0,lwd=3,col="tomato")
+  arrows((1:5)-.1,Ap_em_fert[1,1:5],
+         (1:5)-.1,Ap_em_fert[5,1:5],length=0,lwd=1,col="tomato")
+  points((1:5)+.1,Ap_ep_fert[3,1:5],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:5)+.1,Ap_ep_fert[2,1:5],
+         (1:5)+.1,Ap_ep_fert[4,1:5],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:5)+.1,Ap_ep_fert[1,1:5],
+         (1:5)+.1,Ap_ep_fert[5,1:5],length=0,lwd=1,col="cornflowerblue")
+  title(expression("A) "*italic("Agrostis perennans")*" (AGPE)"),adj=0)
+  axis(1,at=1:5,labels=c("1","2","3","4","5+"))
+  axis(2,at=0:round(quantile(Ap_fert$flw_count_t,ylim_quantile)))
+  legend("topright",c("S+","S-"),pch=16,col=c("cornflowerblue","tomato"))
+  
+  plot(Er_fert$age_lump,Er_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
+       xlim=c(0.5,2.5),ylim=c(0,quantile(Er_fert$flw_count_t,ylim_quantile)),axes=F)
+  points(jitter(Er_fert$age_lump[Er_fert$endo_01==0])-0.25,
+         jitter(Er_fert$flw_count_t[Er_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Er_fert$age_lump[Er_fert$endo_01==1])+0.25,
+         jitter(Er_fert$flw_count_t[Er_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((1:2)-.1,Er_em_fert[3,1:2],pch=16,cex=2,col="tomato")
+  arrows((1:2)-.1,Er_em_fert[2,1:2],
+         (1:2)-.1,Er_em_fert[4,1:2],length=0,lwd=3,col="tomato")
+  arrows((1:2)-.1,Er_em_fert[1,1:2],
+         (1:2)-.1,Er_em_fert[5,1:2],length=0,lwd=1,col="tomato")
+  points((1:2)+.1,Er_ep_fert[3,1:2],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:2)+.1,Er_ep_fert[2,1:2],
+         (1:2)+.1,Er_ep_fert[4,1:2],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:2)+.1,Er_ep_fert[1,1:2],
+         (1:2)+.1,Er_ep_fert[5,1:2],length=0,lwd=1,col="cornflowerblue")
+  title(expression("B) "*italic("Elymus villosus")*" (ELRI)"),adj=0)
+  axis(1,at=1:2,labels=c("1","2+"))
+  axis(2,at=0:round(quantile(Er_fert$flw_count_t,ylim_quantile)))
+  
+  plot(Ev_fert$age_lump,Ev_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
+       xlim=c(0.5,3.5),ylim=c(0,quantile(Ev_fert$flw_count_t,ylim_quantile)),axes=F)
+  points(jitter(Ev_fert$age_lump[Ev_fert$endo_01==0])-0.25,
+         jitter(Ev_fert$flw_count_t[Ev_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Ev_fert$age_lump[Ev_fert$endo_01==1])+0.25,
+         jitter(Ev_fert$flw_count_t[Ev_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((1:3)-.1,Ev_em_fert[3,1:3],pch=16,cex=2,col="tomato")
+  arrows((1:3)-.1,Ev_em_fert[2,1:3],
+         (1:3)-.1,Ev_em_fert[4,1:3],length=0,lwd=3,col="tomato")
+  arrows((1:3)-.1,Ev_em_fert[1,1:3],
+         (1:3)-.1,Ev_em_fert[5,1:3],length=0,lwd=1,col="tomato")
+  points((1:3)+.1,Ev_ep_fert[3,1:3],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:3)+.1,Ev_ep_fert[2,1:3],
+         (1:3)+.1,Ev_ep_fert[4,1:3],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:3)+.1,Ev_ep_fert[1,1:3],
+         (1:3)+.1,Ev_ep_fert[5,1:3],length=0,lwd=1,col="cornflowerblue")
+  title(expression("C) "*italic("Elymus virginicus")*" (ELVI)"),adj=0)
+  axis(1,at=1:3,labels=c("1","2","3+"))
+  axis(2,at=0:round(quantile(Ev_fert$flw_count_t,ylim_quantile)))
+  
+  plot(Fs_fert$age_lump,Fs_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
+       xlim=c(0.5,5.5),ylim=c(0,quantile(Fs_fert$flw_count_t,ylim_quantile)),axes=F)
+  points(jitter(Fs_fert$age_lump[Fs_fert$endo_01==0])-0.25,
+         jitter(Fs_fert$flw_count_t[Fs_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Fs_fert$age_lump[Fs_fert$endo_01==1])+0.25,
+         jitter(Fs_fert$flw_count_t[Fs_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((1:5)-.1,Fs_em_fert[3,1:5],pch=16,cex=2,col="tomato")
+  arrows((1:5)-.1,Fs_em_fert[2,1:5],
+         (1:5)-.1,Fs_em_fert[4,1:5],length=0,lwd=3,col="tomato")
+  arrows((1:5)-.1,Fs_em_fert[1,1:5],
+         (1:5)-.1,Fs_em_fert[5,1:5],length=0,lwd=1,col="tomato")
+  points((1:5)+.1,Fs_ep_fert[3,1:5],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:5)+.1,Fs_ep_fert[2,1:5],
+         (1:5)+.1,Fs_ep_fert[4,1:5],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:5)+.1,Fs_ep_fert[1,1:5],
+         (1:5)+.1,Fs_ep_fert[5,1:5],length=0,lwd=1,col="cornflowerblue")
+  title(expression("D) "*italic("Festuca subverticillata")*" (FESU)"),adj=0)
+  axis(1,at=1:5,labels=c("1","2","3","4","5+"))
+  axis(2,at=0:round(quantile(Fs_fert$flw_count_t,ylim_quantile)))
+  
+  plot(Pa_fert$age_lump,Pa_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
+       xlim=c(0.5,2.5),ylim=c(0,quantile(Pa_fert$flw_count_t,ylim_quantile)),axes=F)
+  points(jitter(Pa_fert$age_lump[Pa_fert$endo_01==0])-0.25,
+         jitter(Pa_fert$flw_count_t[Pa_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Pa_fert$age_lump[Pa_fert$endo_01==1])+0.25,
+         jitter(Pa_fert$flw_count_t[Pa_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((1:2)-.1,Pa_em_fert[3,1:2],pch=16,cex=2,col="tomato")
+  arrows((1:2)-.1,Pa_em_fert[2,1:2],
+         (1:2)-.1,Pa_em_fert[4,1:2],length=0,lwd=3,col="tomato")
+  arrows((1:2)-.1,Pa_em_fert[1,1:2],
+         (1:2)-.1,Pa_em_fert[5,1:2],length=0,lwd=1,col="tomato")
+  points((1:2)+.1,Pa_ep_fert[3,1:2],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:2)+.1,Pa_ep_fert[2,1:2],
+         (1:2)+.1,Pa_ep_fert[4,1:2],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:2)+.1,Pa_ep_fert[1,1:2],
+         (1:2)+.1,Pa_ep_fert[5,1:2],length=0,lwd=1,col="cornflowerblue")
+  title(expression("E) "*italic("Poa alsodes")*" (POAL)"),adj=0)
+  axis(1,at=1:2,labels=c("1","2+"))
+  axis(2,at=0:round(quantile(Pa_fert$flw_count_t,ylim_quantile)))
+  ##note different y lim for Pu
+  plot(Pu_fert$age_lump,Pu_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
+       xlim=c(0.5,4.5),ylim=c(0,quantile(Pu_fert$flw_count_t,ylim_quantile)),axes=F)
+  points(jitter(Pu_fert$age_lump[Pu_fert$endo_01==0])-0.25,
+         jitter(Pu_fert$flw_count_t[Pu_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Pu_fert$age_lump[Pu_fert$endo_01==1])+0.25,
+         jitter(Pu_fert$flw_count_t[Pu_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((1:4)-.1,Pu_em_fert[3,1:4],pch=16,cex=2,col="tomato")
+  arrows((1:4)-.1,Pu_em_fert[2,1:4],
+         (1:4)-.1,Pu_em_fert[4,1:4],length=0,lwd=3,col="tomato")
+  arrows((1:4)-.1,Pu_em_fert[1,1:4],
+         (1:4)-.1,Pu_em_fert[5,1:4],length=0,lwd=1,col="tomato")
+  points((1:4)+.1,Pu_ep_fert[3,1:4],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:4)+.1,Pu_ep_fert[2,1:4],
+         (1:4)+.1,Pu_ep_fert[4,1:4],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:4)+.1,Pu_ep_fert[1,1:4],
+         (1:4)+.1,Pu_ep_fert[5,1:4],length=0,lwd=1,col="cornflowerblue")
+  title(expression("F) "*italic("Poa autumnalis")*" (POAU)"),adj=0)
+  axis(1,at=1:4,labels=c("1","2","3","4+"))
+  axis(2,at=0:round(quantile(Pu_fert$flw_count_t,ylim_quantile)))
+  
+  plot(Ps_fert$age_lump,Ps_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
+       xlim=c(0.5,7.5),ylim=c(0,quantile(Ps_fert$flw_count_t,ylim_quantile)),axes=F)
+  points(jitter(Ps_fert$age_lump[Ps_fert$endo_01==0])-0.25,
+         jitter(Ps_fert$flw_count_t[Ps_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
+  points(jitter(Ps_fert$age_lump[Ps_fert$endo_01==1])+0.25,
+         jitter(Ps_fert$flw_count_t[Ps_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
+  points((1:7)-.1,Ps_em_fert[3,1:7],pch=16,cex=2,col="tomato")
+  arrows((1:7)-.1,Ps_em_fert[2,1:7],
+         (1:7)-.1,Ps_em_fert[4,1:7],length=0,lwd=3,col="tomato")
+  arrows((1:7)-.1,Ps_em_fert[1,1:7],
+         (1:7)-.1,Ps_em_fert[5,1:7],length=0,lwd=1,col="tomato")
+  points((1:7)+.1,Ps_ep_fert[3,1:7],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:7)+.1,Ps_ep_fert[2,1:7],
+         (1:7)+.1,Ps_ep_fert[4,1:7],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:7)+.1,Ps_ep_fert[1,1:7],
+         (1:7)+.1,Ps_ep_fert[5,1:7],length=0,lwd=1,col="cornflowerblue")
+  title(expression("G) "*italic("Poa sylvestris")*" (POSY)"),adj=0)
+  axis(1,at=1:7,labels=c("1","2","3","4","5","6","7+"))
+  axis(2,at=0:round(quantile(Ps_fert$flw_count_t,ylim_quantile)))
+  
+  plot(NA, xlim = range(posterior_summary_fert$relage), 
+       ylim = c(0, 1),
+       xlab = "Relative age", 
+       ylab = "Probability of positive symbiont effect")
+  abline(h = 0.5, lty = 2)  # line at 0
+  title(expression("H) All species"),adj=0)
+  for(sp in 1:length(spp_list)){
+    lines(posterior_summary_fert$relage[posterior_summary_fert$species==spp_list[sp]],
+          posterior_summary_fert$prob_pos[posterior_summary_fert$species==spp_list[sp]], 
+          col = species_colors[sp], lwd = 2) 
+  }
+  legend("topleft", legend = spp_list, col = species_colors,
+         lty = 1, lwd = 2, cex = 0.5, ncol=3)
+}
+dev.off()
+
 
 ##combine survival and fertility probpos data frames
 bind_rows(posterior_summary_fert %>% mutate(vital_rate="Fertility"),
@@ -1299,7 +1330,7 @@ Ps_dim<-age_limits$lump_age[age_limits$species=="POSY"]+2
 source("analysis/Lifehistorytrait_function.R")
 
 ## set up data frame to store life history metrics
-LH_dat<-data.frame(R0_em=rep(NA,n_post),R0_ep=rep(NA,n_post),
+LH_dat<-data.frame(draw=rep(NA,n_post),R0_em=rep(NA,n_post),R0_ep=rep(NA,n_post),
                                G_em=rep(NA,n_post),G_ep=rep(NA,n_post),
                                lambda_em=rep(NA,n_post),lambda_ep=rep(NA,n_post),
                                pRep_em=rep(NA,n_post),pRep_ep=rep(NA,n_post),
