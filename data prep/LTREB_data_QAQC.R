@@ -208,7 +208,7 @@ bind_rows(indiana_no_problems,birthyears_fixed[,paste(names(indiana_no_problems)
   mutate(original=abs(origin_01-1)) %>% 
   select(species,plot,endo_01,id,original,endo_status_from_check,birth,year_t,age,
          size_t,flw_count_t,mean_spike_t,year_t1,surv_t1,
-         size_t1,flw_count_t1,mean_spike_t1) -> indiana_for_merge
+         size_t1,flw_count_t1,mean_spike_t1,dist_a,dist_b) -> indiana_for_merge
 
 ##prepare POAU data for row bind with indiana data
 poau %>% 
@@ -217,12 +217,13 @@ poau %>%
   filter(year_t<2022) %>% 
   select(species,Plot,Plot_endo_status,indID,org_rec,Endo,year_recruit,year_t,age,
          tiller_number_t,inf_number_spring_t,mean_spike_t,year_t1,spring_survival_t1,
-         tiller_number_t1,inf_number_spring_t1,mean_spike_t1) %>% 
+         tiller_number_t1,inf_number_spring_t1,mean_spike_t1,Distance.A,Distance.B) %>% 
   rename(species=species,plot=Plot,endo_01=Plot_endo_status,id=indID,original=org_rec,
          endo_status_from_check=Endo,birth=year_recruit,year_t=year_t,age=age,
          size_t=tiller_number_t,flw_count_t=inf_number_spring_t,mean_spike_t=mean_spike_t,
          year_t1=year_t1,surv_t1=spring_survival_t1,
-         size_t1=tiller_number_t1,flw_count_t1=inf_number_spring_t1,mean_spike_t1=mean_spike_t1)-> poau_for_merge
+         size_t1=tiller_number_t1,flw_count_t1=inf_number_spring_t1,mean_spike_t1=mean_spike_t1,
+         dist_a=Distance.A,dist_b=Distance.B)-> poau_for_merge
 
 ## should have same number of columns
 dim(poau_for_merge);dim(indiana_for_merge)
