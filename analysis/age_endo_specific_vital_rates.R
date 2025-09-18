@@ -19,8 +19,6 @@ tom<-"C:/Users/tm9/Dropbox/github/LTREB-life-history"
 setwd(tom)
 
 ## read in QAQC'd data
-## as of 4.18.2024 there are still some data issues (see comments) but this is 
-## far enough along to proceed
 ltreb_allplants<-read.csv("./data prep/ltreb_allspp_qaqc.csv") %>% 
   ## drop LOAR (so few recruits)
   filter(species!="LOAR") %>% 
@@ -1307,6 +1305,11 @@ legend("topleft",legend=c("S-","S+"),
        pch=c(16,16),col=c("tomato","cornflowerblue"),cex=1.2)}
 dev.off()
 
+
+# vertical transmission ---------------------------------------------------
+
+
+
 # Assemble list of matrices from posterior samples ------------------------
 
 ##grab random samples of indices
@@ -1333,6 +1336,7 @@ source("analysis/Lifehistorytrait_function.R")
 LH_dat<-data.frame(draw=rep(NA,n_post),R0_em=rep(NA,n_post),R0_ep=rep(NA,n_post),
                                G_em=rep(NA,n_post),G_ep=rep(NA,n_post),
                                lambda_em=rep(NA,n_post),lambda_ep=rep(NA,n_post),
+                               lambda_em_vt=rep(NA,n_post),lambda_ep_vt=rep(NA,n_post),
                                pRep_em=rep(NA,n_post),pRep_ep=rep(NA,n_post),
                                La_em=rep(NA,n_post),La_ep=rep(NA,n_post),
                                matlifexp_em=rep(NA,n_post),matlifexp_ep=rep(NA,n_post),
@@ -1340,7 +1344,8 @@ LH_dat<-data.frame(draw=rep(NA,n_post),R0_em=rep(NA,n_post),R0_ep=rep(NA,n_post)
                                entropyd_em=rep(NA,n_post),entropyd_ep=rep(NA,n_post),
                                entropyk_em=rep(NA,n_post),entropyk_ep=rep(NA,n_post),
                                gini_em=rep(NA,n_post),gini_ep=rep(NA,n_post),
-                               firstrepro_em=rep(NA,n_post),firstrepro_ep=rep(NA,n_post))
+                               firstrepro_em=rep(NA,n_post),firstrepro_ep=rep(NA,n_post),
+                               isergodic=rep(NA,n_post),isirreducible=rep(NA,n_post))
 Ap_lifehistorypost<-Er_lifehistorypost<-Ev_lifehistorypost<-Fs_lifehistorypost<-Pa_lifehistorypost<-Pu_lifehistorypost<-Ps_lifehistorypost<-LH_dat
 
 for(i in 1:n_post){
@@ -1395,31 +1400,30 @@ for(i in 1:n_post){
   ## store outputs
   Ap_lifehistorypost$R0_em[i]<-Ap_em$Ro
   Ap_lifehistorypost$G_em[i]<-Ap_em$generation.time
-  Ap_lifehistorypost$lambda_em[i]<-Ap_em$lambda
   Ap_lifehistorypost$pRep_em[i]<-Ap_em$pRep
   Ap_lifehistorypost$La_em[i]<-Ap_em$La
   Ap_lifehistorypost$matlifexp_em[i]<-Ap_em$remainingMatureLifeExpectancy
   Ap_lifehistorypost$meanelexp_em[i]<-Ap_em$meanelexp
   Ap_lifehistorypost$entropyd_em[i]<-Ap_em$entropyd
-  Ap_lifehistorypost$entropyk_em[i]<-Ap_em$entropyk
   Ap_lifehistorypost$gini_em[i]<-Ap_em$gini
   Ap_lifehistorypost$longevity_em[i]<-Ap_em$longevity
   Ap_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],1]))
+  Ap_lifehistorypost$lambda_em[i]<-lambda(Ap_em_U+Ap_em_F)#Ap_em$lambda
   
   Ap_lifehistorypost$R0_ep[i]<-Ap_ep$Ro
   Ap_lifehistorypost$G_ep[i]<-Ap_ep$generation.time
-  Ap_lifehistorypost$lambda_ep[i]<-Ap_ep$lambda
   Ap_lifehistorypost$pRep_ep[i]<-Ap_ep$pRep
   Ap_lifehistorypost$La_ep[i]<-Ap_ep$La
   Ap_lifehistorypost$matlifexp_ep[i]<-Ap_ep$remainingMatureLifeExpectancy
   Ap_lifehistorypost$meanelexp_ep[i]<-Ap_ep$meanelexp
   Ap_lifehistorypost$entropyd_ep[i]<-Ap_ep$entropyd
-  Ap_lifehistorypost$entropyk_ep[i]<-Ap_ep$entropyk
   Ap_lifehistorypost$gini_ep[i]<-Ap_ep$gini
   Ap_lifehistorypost$longevity_ep[i]<-Ap_ep$longevity
   Ap_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],1]+firstflower_params$beta[firstrepro_i[i],1]))
+  Ap_lifehistorypost$lambda_ep[i]<-lambda(Ap_ep_U+Ap_ep_F)#Ap_ep$lambda
   
   ## Elymus villosus
+  #collect parameter estimates
   Er_em_surv <- invlogit(c(Er_par$beta_Er[survfert_i[i],"(Intercept)"],
                            Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)1"],
                            Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)2"]))
@@ -1430,45 +1434,66 @@ for(i in 1:n_post){
                       Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"])))
   Er_ep_fert <- c(0,exp(c(Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"],
                       Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"])))
-  Er_em_U<-Er_em_F<-Er_ep_U<-Er_ep_F<-matrix(0,Er_dim,Er_dim)
+  Er_vt <- 0.9#placeholder
+  
+  #set up matrices
+  Er_em_U<-Er_em_F<-Er_ep_U<-Er_ep_F<-Er_em_F_vt<-Er_ep_F_vt<-matrix(0,Er_dim,Er_dim)
+  diag(Er_em_U[-1,-ncol(Er_em_U)])<-c(0,Er_em_surv[1:2])
+  Er_em_U[Er_dim,Er_dim]<-Er_em_surv[3]
+  diag(Er_ep_U[-1,-ncol(Er_ep_U)])<-c(0,Er_ep_surv[1:2])
+  Er_ep_U[Er_dim,Er_dim]<-Er_ep_surv[3]
+  #host E- fertility
   Er_em_F[1,2:Er_dim]<-Er_em_fert
   Er_em_F[2,1]<-r2_em[2]
   Er_em_F[2,2:Er_dim]<-r1_em[2]*Er_em_fert
-  diag(Er_em_U[-1,-ncol(Er_em_U)])<-c(0,Er_em_surv[1:2])
-  Er_em_U[Er_dim,Er_dim]<-Er_em_surv[3]
+  #symbiont E- fertility
+  Er_em_F_vt[1,2:Er_dim]<-Er_em_fert*Er_vt
+  Er_em_F_vt[2,1]<-r2_em[2]
+  Er_em_F_vt[2,2:Er_dim]<-r1_em[2]*Er_em_fert*Er_vt
+  #host E+ fertility
   Er_ep_F[1,2:Er_dim]<-Er_ep_fert
   Er_ep_F[2,1]<-r2_ep[2]
   Er_ep_F[2,2:Er_dim]<-r1_ep[2]*Er_ep_fert
-  diag(Er_ep_U[-1,-ncol(Er_ep_U)])<-c(0,Er_ep_surv[1:2])
-  Er_ep_U[Er_dim,Er_dim]<-Er_ep_surv[3]
+  #symbiont E+ fertility
+  Er_ep_F_vt[1,2:Er_dim]<-Er_ep_fert*Er_vt
+  Er_ep_F_vt[2,1]<-r2_ep[2]
+  Er_ep_F_vt[2,2:Er_dim]<-r1_ep[2]*Er_ep_fert*Er_vt 
+  #run life history function
   Er_em<-lifeTimeRepEvents(Er_em_U,Er_em_F,2)
   Er_ep<-lifeTimeRepEvents(Er_ep_U,Er_ep_F,2)
   ## store outputs
   Er_lifehistorypost$R0_em[i]<-Er_em$Ro
   Er_lifehistorypost$G_em[i]<-Er_em$generation.time
-  Er_lifehistorypost$lambda_em[i]<-Er_em$lambda
   Er_lifehistorypost$pRep_em[i]<-Er_em$pRep
   Er_lifehistorypost$La_em[i]<-Er_em$La
   Er_lifehistorypost$matlifexp_em[i]<-Er_em$remainingMatureLifeExpectancy
   Er_lifehistorypost$meanelexp_em[i]<-Er_em$meanelexp
   Er_lifehistorypost$entropyd_em[i]<-Er_em$entropyd
-  Er_lifehistorypost$entropyk_em[i]<-Er_em$entropyk
   Er_lifehistorypost$gini_em[i]<-Er_em$gini
   Er_lifehistorypost$longevity_em[i]<-Er_em$longevity
   Er_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],2]))
+  #E- host fitness
+  Er_lifehistorypost$lambda_em[i]<-lambda(Er_em_U+Er_em_F)#Er_em$lambda
+  #E- symbiont fitness
+  Er_lifehistorypost$lambda_em_vt[i]<-lambda(Er_em_U+Er_em_F_vt)
   
   Er_lifehistorypost$R0_ep[i]<-Er_ep$Ro
   Er_lifehistorypost$G_ep[i]<-Er_ep$generation.time
-  Er_lifehistorypost$lambda_ep[i]<-Er_ep$lambda
   Er_lifehistorypost$pRep_ep[i]<-Er_ep$pRep
   Er_lifehistorypost$La_ep[i]<-Er_ep$La
   Er_lifehistorypost$matlifexp_ep[i]<-Er_ep$remainingMatureLifeExpectancy
   Er_lifehistorypost$meanelexp_ep[i]<-Er_ep$meanelexp
   Er_lifehistorypost$entropyd_ep[i]<-Er_ep$entropyd
-  Er_lifehistorypost$entropyk_ep[i]<-Er_ep$entropyk
   Er_lifehistorypost$gini_ep[i]<-Er_ep$gini
   Er_lifehistorypost$longevity_ep[i]<-Er_ep$longevity
   Er_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],2]+firstflower_params$beta[firstrepro_i[i],2]))
+  #E+ host fitness
+  Er_lifehistorypost$lambda_ep[i]<-lambda(Er_ep_U+Er_ep_F)#Er_ep$lambda
+  #E+ symbiont fitness
+  Er_lifehistorypost$lambda_ep_vt[i]<-lambda(Er_ep_U+Er_ep_F_vt)
+  ##check ergodicity and irreducibility
+  Er_lifehistorypost$isergodic<-isErgodic(Er_ep_U+Er_ep_F)
+  Er_lifehistorypost$isirreducible<-isIrreducible(Er_ep_U+Er_ep_F)
   
   ##Elymus virginicus
   Ev_em_surv <- invlogit(c(Ev_par$beta_Ev[survfert_i[i],"(Intercept)"],
@@ -1485,45 +1510,67 @@ for(i in 1:n_post){
   Ev_ep_fert <- c(0,exp(c(Ev_par_fert$beta_Ev[survfert_i[i],"(Intercept)"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(endo_01)1"],
                       Ev_par_fert$beta_Ev[survfert_i[i],"(Intercept)"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(endo_01)1"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)2"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"],
                       Ev_par_fert$beta_Ev[survfert_i[i],"(Intercept)"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(endo_01)1"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)3"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"])))
-  Ev_em_U<-Ev_em_F<-Ev_ep_U<-Ev_ep_F<-matrix(0,Ev_dim,Ev_dim)
+  Ev_vt <- 0.9#placeholder
+  
+  Ev_em_U<-Ev_em_F<-Ev_ep_U<-Ev_ep_F<-Ev_em_F_vt<-Ev_ep_F_vt<-matrix(0,Ev_dim,Ev_dim)
+
+  diag(Ev_em_U[-1,-ncol(Ev_em_U)])<-c(0,Ev_em_surv[1:3])
+  Ev_em_U[Ev_dim,Ev_dim]<-Ev_em_surv[4]
+  diag(Ev_ep_U[-1,-ncol(Ev_ep_U)])<-c(0,Ev_ep_surv[1:3])
+  Ev_ep_U[Ev_dim,Ev_dim]<-Ev_ep_surv[4]
+  #host E- fertility
   Ev_em_F[1,2:Ev_dim]<-Ev_em_fert
   Ev_em_F[2,1]<-r2_em[3]
   Ev_em_F[2,2:Ev_dim]<-r1_em[3]*Ev_em_fert
-  diag(Ev_em_U[-1,-ncol(Ev_em_U)])<-c(0,Ev_em_surv[1:3])
-  Ev_em_U[Ev_dim,Ev_dim]<-Ev_em_surv[4]
+  #symbiont E- fertility
+  Ev_em_F_vt[1,2:Ev_dim]<-Ev_em_fert*Ev_vt
+  Ev_em_F_vt[2,1]<-r2_em[3]
+  Ev_em_F_vt[2,2:Ev_dim]<-r1_em[3]*Ev_em_fert*Ev_vt
+  #host E+ fertility
   Ev_ep_F[1,2:Ev_dim]<-Ev_ep_fert
   Ev_ep_F[2,1]<-r2_ep[3]
   Ev_ep_F[2,2:Ev_dim]<-r1_ep[3]*Ev_ep_fert
-  diag(Ev_ep_U[-1,-ncol(Ev_ep_U)])<-c(0,Ev_ep_surv[1:3])
-  Ev_ep_U[Ev_dim,Ev_dim]<-Ev_ep_surv[4]
+  #symbiont E+ fertility
+  Ev_ep_F_vt[1,2:Ev_dim]<-Ev_ep_fert*Ev_vt
+  Ev_ep_F_vt[2,1]<-r2_ep[3]
+  Ev_ep_F_vt[2,2:Ev_dim]<-r1_ep[3]*Ev_ep_fert*Ev_vt
+  
   Ev_em<-lifeTimeRepEvents(Ev_em_U,Ev_em_F,2)
   Ev_ep<-lifeTimeRepEvents(Ev_ep_U,Ev_ep_F,2)
   ## store outputs
   Ev_lifehistorypost$R0_em[i]<-Ev_em$Ro
   Ev_lifehistorypost$G_em[i]<-Ev_em$generation.time
-  Ev_lifehistorypost$lambda_em[i]<-Ev_em$lambda
   Ev_lifehistorypost$pRep_em[i]<-Ev_em$pRep
   Ev_lifehistorypost$La_em[i]<-Ev_em$La
   Ev_lifehistorypost$matlifexp_em[i]<-Ev_em$remainingMatureLifeExpectancy
   Ev_lifehistorypost$meanelexp_em[i]<-Ev_em$meanelexp
   Ev_lifehistorypost$entropyd_em[i]<-Ev_em$entropyd
-  Ev_lifehistorypost$entropyk_em[i]<-Ev_em$entropyk
   Ev_lifehistorypost$gini_em[i]<-Ev_em$gini
   Ev_lifehistorypost$longevity_em[i]<-Ev_em$longevity
   Ev_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],3]))
+  #host E- fitness
+  Ev_lifehistorypost$lambda_em[i]<-lambda(Ev_em_U+Ev_em_F)#Ev_em$lambda
+  #symbiont E- fitness
+  Ev_lifehistorypost$lambda_em_vt[i]<-lambda(Ev_em_U+Ev_em_F_vt)
   
   Ev_lifehistorypost$R0_ep[i]<-Ev_ep$Ro
   Ev_lifehistorypost$G_ep[i]<-Ev_ep$generation.time
-  Ev_lifehistorypost$lambda_ep[i]<-Ev_ep$lambda
   Ev_lifehistorypost$pRep_ep[i]<-Ev_ep$pRep
   Ev_lifehistorypost$La_ep[i]<-Ev_ep$La
   Ev_lifehistorypost$matlifexp_ep[i]<-Ev_ep$remainingMatureLifeExpectancy
   Ev_lifehistorypost$meanelexp_ep[i]<-Ev_ep$meanelexp
   Ev_lifehistorypost$entropyd_ep[i]<-Ev_ep$entropyd
-  Ev_lifehistorypost$entropyk_ep[i]<-Ev_ep$entropyk
   Ev_lifehistorypost$gini_ep[i]<-Ev_ep$gini
   Ev_lifehistorypost$longevity_ep[i]<-Ev_ep$longevity
   Ev_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],3]+firstflower_params$beta[firstrepro_i[i],3]))
+  #host E+ fitness
+  Ev_lifehistorypost$lambda_ep[i]<-lambda(Ev_ep_U+Ev_ep_F)#Ev_ep$lambda
+  #symbiont E+ fitness
+  Ev_lifehistorypost$lambda_ep_vt[i]<-lambda(Ev_ep_U+Ev_ep_F_vt)
+  
+  ##check ergodicity and irreducibility
+  Ev_lifehistorypost$isergodic<-isErgodic(Ev_ep_U+Ev_ep_F)
+  Ev_lifehistorypost$isirreducible<-isIrreducible(Ev_ep_U+Ev_ep_F)
   
   ## Festuca subverticillata
   Fs_em_surv <- invlogit(c(Fs_par$beta_Fs[survfert_i[i],"(Intercept)"],
@@ -1548,45 +1595,62 @@ for(i in 1:n_post){
                       Fs_par_fert$beta_Fs[survfert_i[i],"(Intercept)"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(endo_01)1"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)3"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"],
                       Fs_par_fert$beta_Fs[survfert_i[i],"(Intercept)"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(endo_01)1"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)4"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)4:as.factor(endo_01)1"],
                       Fs_par_fert$beta_Fs[survfert_i[i],"(Intercept)"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(endo_01)1"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)5"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)5:as.factor(endo_01)1"])))
-  Fs_em_U<-Fs_em_F<-Fs_ep_U<-Fs_ep_F<-matrix(0,Fs_dim,Fs_dim)
+  Fs_vt <- 0.9#placeholder
+
+  Fs_em_U<-Fs_em_F<-Fs_ep_U<-Fs_ep_F<-Fs_em_F_vt<-Fs_ep_F_vt<-matrix(0,Fs_dim,Fs_dim)
+  diag(Fs_em_U[-1,-ncol(Fs_em_U)])<-c(0,Fs_em_surv[1:5])
+  Fs_em_U[Fs_dim,Fs_dim]<-Fs_em_surv[6]
+  diag(Fs_ep_U[-1,-ncol(Fs_ep_U)])<-c(0,Fs_ep_surv[1:5])
+  Fs_ep_U[Fs_dim,Fs_dim]<-Fs_ep_surv[6]
+  #host E- fertility
   Fs_em_F[1,2:Fs_dim]<-Fs_em_fert
   Fs_em_F[2,1]<-r2_em[4]
   Fs_em_F[2,2:Fs_dim]<-r1_em[4]*Fs_em_fert
-  diag(Fs_em_U[-1,-ncol(Fs_em_U)])<-c(0,Fs_em_surv[1:5])
-  Fs_em_U[Fs_dim,Fs_dim]<-Fs_em_surv[6]
+  #symbiont E- fertility
+  Fs_em_F_vt[1,2:Fs_dim]<-Fs_em_fert*Fs_vt
+  Fs_em_F_vt[2,1]<-r2_em[4]
+  Fs_em_F_vt[2,2:Fs_dim]<-r1_em[4]*Fs_em_fert*Fs_vt  
+  #host E+ fertility
   Fs_ep_F[1,2:Fs_dim]<-Fs_ep_fert
   Fs_ep_F[2,1]<-r2_ep[4]
   Fs_ep_F[2,2:Fs_dim]<-r1_ep[4]*Fs_ep_fert
-  diag(Fs_ep_U[-1,-ncol(Fs_ep_U)])<-c(0,Fs_ep_surv[1:5])
-  Fs_ep_U[Fs_dim,Fs_dim]<-Fs_ep_surv[6]
+  #symbiont E+ fertility
+  Fs_ep_F_vt[1,2:Fs_dim]<-Fs_ep_fert*Fs_vt
+  Fs_ep_F_vt[2,1]<-r2_ep[4]
+  Fs_ep_F_vt[2,2:Fs_dim]<-r1_ep[4]*Fs_ep_fert*Fs_vt
+  
   Fs_em<-lifeTimeRepEvents(Fs_em_U,Fs_em_F,2)
   Fs_ep<-lifeTimeRepEvents(Fs_ep_U,Fs_ep_F,2)
   ##store outputs
   Fs_lifehistorypost$R0_em[i]<-Fs_em$Ro
   Fs_lifehistorypost$G_em[i]<-Fs_em$generation.time
-  Fs_lifehistorypost$lambda_em[i]<-Fs_em$lambda
   Fs_lifehistorypost$pRep_em[i]<-Fs_em$pRep
   Fs_lifehistorypost$La_em[i]<-Fs_em$La
   Fs_lifehistorypost$matlifexp_em[i]<-Fs_em$remainingMatureLifeExpectancy
   Fs_lifehistorypost$meanelexp_em[i]<-Fs_em$meanelexp
   Fs_lifehistorypost$entropyd_em[i]<-Fs_em$entropyd
-  Fs_lifehistorypost$entropyk_em[i]<-Fs_em$entropyk
   Fs_lifehistorypost$gini_em[i]<-Fs_em$gini
   Fs_lifehistorypost$longevity_em[i]<-Fs_em$longevity
   Fs_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],4]))
+  Fs_lifehistorypost$lambda_em[i]<-lambda(Fs_em_U+Fs_em_F)#Fs_em$lambda
+  Fs_lifehistorypost$lambda_em_vt[i]<-lambda(Fs_em_U+Fs_em_F_vt)
   
   Fs_lifehistorypost$R0_ep[i]<-Fs_ep$Ro
   Fs_lifehistorypost$G_ep[i]<-Fs_ep$generation.time
-  Fs_lifehistorypost$lambda_ep[i]<-Fs_ep$lambda
   Fs_lifehistorypost$pRep_ep[i]<-Fs_ep$pRep
   Fs_lifehistorypost$La_ep[i]<-Fs_ep$La
   Fs_lifehistorypost$matlifexp_ep[i]<-Fs_ep$remainingMatureLifeExpectancy
   Fs_lifehistorypost$meanelexp_ep[i]<-Fs_ep$meanelexp
   Fs_lifehistorypost$entropyd_ep[i]<-Fs_ep$entropyd
-  Fs_lifehistorypost$entropyk_ep[i]<-Fs_ep$entropyk
   Fs_lifehistorypost$gini_ep[i]<-Fs_ep$gini
   Fs_lifehistorypost$longevity_ep[i]<-Fs_ep$longevity
   Fs_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],4]+firstflower_params$beta[firstrepro_i[i],4]))
+  Fs_lifehistorypost$lambda_ep[i]<-lambda(Fs_ep_U+Fs_ep_F)#Fs_ep$lambda
+  Fs_lifehistorypost$lambda_ep_vt[i]<-lambda(Fs_ep_U+Fs_ep_F_vt)
+  
+  ##check ergodicity and irreducibility
+  Fs_lifehistorypost$isergodic<-isErgodic(Fs_ep_U+Fs_ep_F)
+  Fs_lifehistorypost$isirreducible<-isIrreducible(Fs_ep_U+Fs_ep_F)
   
   ##Poa alsodes
   Pa_em_surv <- invlogit(c(Pa_par$beta_Pa[survfert_i[i],"(Intercept)"],
@@ -1599,45 +1663,62 @@ for(i in 1:n_post){
                       Pa_par_fert$beta_Pa[survfert_i[i],"(Intercept)"]+Pa_par_fert$beta_Pa[survfert_i[i],"as.factor(age_lump)2"])))
   Pa_ep_fert <- c(0,exp(c(Pa_par_fert$beta_Pa[survfert_i[i],"(Intercept)"]+Pa_par_fert$beta_Pa[survfert_i[i],"as.factor(endo_01)1"],
                       Pa_par_fert$beta_Pa[survfert_i[i],"(Intercept)"]+Pa_par_fert$beta_Pa[survfert_i[i],"as.factor(endo_01)1"]+Pa_par_fert$beta_Pa[survfert_i[i],"as.factor(age_lump)2"]+Pa_par_fert$beta_Pa[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"])))
-  Pa_em_U<-Pa_em_F<-Pa_ep_U<-Pa_ep_F<-matrix(0,Pa_dim,Pa_dim)
+  Pa_vt<-0.675 #Afkhami&Rudgers2008Table1
+  
+  Pa_em_U<-Pa_em_F<-Pa_ep_U<-Pa_ep_F<-Pa_em_F_vt<-Pa_ep_F_vt<-matrix(0,Pa_dim,Pa_dim)
+  diag(Pa_em_U[-1,-ncol(Pa_em_U)])<-c(0,Pa_em_surv[1:2])
+  Pa_em_U[Pa_dim,Pa_dim]<-Pa_em_surv[3]
+  diag(Pa_ep_U[-1,-ncol(Pa_ep_U)])<-c(0,Pa_ep_surv[1:2])
+  Pa_ep_U[Pa_dim,Pa_dim]<-Pa_ep_surv[3]
+  #hostE-
   Pa_em_F[1,2:Pa_dim]<-Pa_em_fert
   Pa_em_F[2,1]<-r2_em[5]
   Pa_em_F[2,2:Pa_dim]<-r1_em[5]*Pa_em_fert
-  diag(Pa_em_U[-1,-ncol(Pa_em_U)])<-c(0,Pa_em_surv[1:2])
-  Pa_em_U[Pa_dim,Pa_dim]<-Pa_em_surv[3]
+  #symbiontE-
+  Pa_em_F_vt[1,2:Pa_dim]<-Pa_em_fert*Pa_vt
+  Pa_em_F_vt[2,1]<-r2_em[5]
+  Pa_em_F_vt[2,2:Pa_dim]<-r1_em[5]*Pa_em_fert*Pa_vt
+  #hostE+
   Pa_ep_F[1,2:Pa_dim]<-Pa_ep_fert
   Pa_ep_F[2,1]<-r2_ep[5]
   Pa_ep_F[2,2:Pa_dim]<-r1_ep[5]*Pa_ep_fert
-  diag(Pa_ep_U[-1,-ncol(Pa_ep_U)])<-c(0,Pa_ep_surv[1:2])
-  Pa_ep_U[Pa_dim,Pa_dim]<-Pa_ep_surv[3]
+  #symbiontE+
+  Pa_ep_F_vt[1,2:Pa_dim]<-Pa_ep_fert*Pa_vt
+  Pa_ep_F_vt[2,1]<-r2_ep[5]
+  Pa_ep_F_vt[2,2:Pa_dim]<-r1_ep[5]*Pa_ep_fert*Pa_vt
+  
   Pa_em<-lifeTimeRepEvents(Pa_em_U,Pa_em_F,2)
   Pa_ep<-lifeTimeRepEvents(Pa_ep_U,Pa_ep_F,2)
   ##store outputs
   Pa_lifehistorypost$R0_em[i]<-Pa_em$Ro
   Pa_lifehistorypost$G_em[i]<-Pa_em$generation.time
-  Pa_lifehistorypost$lambda_em[i]<-Pa_em$lambda
   Pa_lifehistorypost$pRep_em[i]<-Pa_em$pRep
   Pa_lifehistorypost$La_em[i]<-Pa_em$La
   Pa_lifehistorypost$matlifexp_em[i]<-Pa_em$remainingMatureLifeExpectancy
   Pa_lifehistorypost$meanelexp_em[i]<-Pa_em$meanelexp
   Pa_lifehistorypost$entropyd_em[i]<-Pa_em$entropyd
-  Pa_lifehistorypost$entropyk_em[i]<-Pa_em$entropyk
   Pa_lifehistorypost$gini_em[i]<-Pa_em$gini
   Pa_lifehistorypost$longevity_em[i]<-Pa_em$longevity
   Pa_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],5]))
+  Pa_lifehistorypost$lambda_em[i]<-lambda(Pa_em_U+Pa_em_F)#Pa_em$lambda
+  Pa_lifehistorypost$lambda_em_vt[i]<lambda(Pa_em_U+Pa_em_F_vt)
   
   Pa_lifehistorypost$R0_ep[i]<-Pa_ep$Ro
   Pa_lifehistorypost$G_ep[i]<-Pa_ep$generation.time
-  Pa_lifehistorypost$lambda_ep[i]<-Pa_ep$lambda
   Pa_lifehistorypost$pRep_ep[i]<-Pa_ep$pRep
   Pa_lifehistorypost$La_ep[i]<-Pa_ep$La
   Pa_lifehistorypost$matlifexp_ep[i]<-Pa_ep$remainingMatureLifeExpectancy
   Pa_lifehistorypost$meanelexp_ep[i]<-Pa_ep$meanelexp
   Pa_lifehistorypost$entropyd_ep[i]<-Pa_ep$entropyd
-  Pa_lifehistorypost$entropyk_ep[i]<-Pa_ep$entropyk
   Pa_lifehistorypost$gini_ep[i]<-Pa_ep$gini
   Pa_lifehistorypost$longevity_ep[i]<-Pa_ep$longevity
   Pa_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],5]+firstflower_params$beta[firstrepro_i[i],5]))
+  Pa_lifehistorypost$lambda_ep[i]<-lambda(Pa_ep_U+Pa_ep_F)#Pa_ep$lambda
+  Pa_lifehistorypost$lambda_ep_vt[i]<-lambda(Pa_ep_U+Pa_ep_F_vt)
+  
+  ##check ergodicity and irreducibility
+  Pa_lifehistorypost$isergodic<-isErgodic(Pa_ep_U+Pa_ep_F)
+  Pa_lifehistorypost$isirreducible<-isIrreducible(Pa_ep_U+Pa_ep_F)
   
   ##Poa autumnalis
   Pu_em_surv <- invlogit(c(Pu_par$beta_Pu[survfert_i[i],"(Intercept)"],
@@ -1658,45 +1739,62 @@ for(i in 1:n_post){
                       Pu_par_fert$beta_Pu[survfert_i[i],"(Intercept)"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(endo_01)1"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)2"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"],
                       Pu_par_fert$beta_Pu[survfert_i[i],"(Intercept)"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(endo_01)1"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)3"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"],
                       Pu_par_fert$beta_Pu[survfert_i[i],"(Intercept)"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(endo_01)1"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)4"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)4:as.factor(endo_01)1"])))
-  Pu_em_U<-Pu_em_F<-Pu_ep_U<-Pu_ep_F<-matrix(0,Pu_dim,Pu_dim)
+  Pu_vt<-0.9#placeholder
+  
+  Pu_em_U<-Pu_em_F<-Pu_ep_U<-Pu_ep_F<-Pu_em_F_vt<-Pu_ep_F_vt<-matrix(0,Pu_dim,Pu_dim)
+  diag(Pu_em_U[-1,-ncol(Pu_em_U)])<-c(0,Pu_em_surv[1:4])
+  Pu_em_U[Pu_dim,Pu_dim]<-Pu_em_surv[5]
+  diag(Pu_ep_U[-1,-ncol(Pu_ep_U)])<-c(0,Pu_ep_surv[1:4])
+  Pu_ep_U[Pu_dim,Pu_dim]<-Pu_ep_surv[5]
+  #hostE-
   Pu_em_F[1,2:Pu_dim]<-Pu_em_fert
   Pu_em_F[2,1]<-r2_em[6]
   Pu_em_F[2,2:Pu_dim]<-r1_em[6]*Pu_em_fert
-  diag(Pu_em_U[-1,-ncol(Pu_em_U)])<-c(0,Pu_em_surv[1:4])
-  Pu_em_U[Pu_dim,Pu_dim]<-Pu_em_surv[5]
+  #symbiontE-
+  Pu_em_F_vt[1,2:Pu_dim]<-Pu_em_fert*Pu_vt
+  Pu_em_F_vt[2,1]<-r2_em[6]
+  Pu_em_F_vt[2,2:Pu_dim]<-r1_em[6]*Pu_em_fert*Pu_vt
+  #hostE+
   Pu_ep_F[1,2:Pu_dim]<-Pu_ep_fert
   Pu_ep_F[2,1]<-r2_ep[6]
   Pu_ep_F[2,2:Pu_dim]<-r1_ep[6]*Pu_ep_fert
-  diag(Pu_ep_U[-1,-ncol(Pu_ep_U)])<-c(0,Pu_ep_surv[1:4])
-  Pu_ep_U[Pu_dim,Pu_dim]<-Pu_ep_surv[5]
+  #symbiontE+
+  Pu_ep_F_vt[1,2:Pu_dim]<-Pu_ep_fert*Pu_vt
+  Pu_ep_F_vt[2,1]<-r2_ep[6]
+  Pu_ep_F_vt[2,2:Pu_dim]<-r1_ep[6]*Pu_ep_fert*Pu_vt
+  
   ##store outputs
   Pu_em<-lifeTimeRepEvents(Pu_em_U,Pu_em_F,2)
   Pu_ep<-lifeTimeRepEvents(Pu_ep_U,Pu_ep_F,2)
   Pu_lifehistorypost$R0_em[i]<-Pu_em$Ro
   Pu_lifehistorypost$G_em[i]<-Pu_em$generation.time
-  Pu_lifehistorypost$lambda_em[i]<-Pu_em$lambda
   Pu_lifehistorypost$pRep_em[i]<-Pu_em$pRep
   Pu_lifehistorypost$La_em[i]<-Pu_em$La
   Pu_lifehistorypost$matlifexp_em[i]<-Pu_em$remainingMatureLifeExpectancy
   Pu_lifehistorypost$meanelexp_em[i]<-Pu_em$meanelexp
   Pu_lifehistorypost$entropyd_em[i]<-Pu_em$entropyd
-  Pu_lifehistorypost$entropyk_em[i]<-Pu_em$entropyk
   Pu_lifehistorypost$gini_em[i]<-Pu_em$gini
   Pu_lifehistorypost$longevity_em[i]<-Pu_em$longevity
   Pu_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],6]))
+  Pu_lifehistorypost$lambda_em[i]<-lambda(Pu_em_U+Pu_em_F)#Pu_em$lambda
+  Pu_lifehistorypost$lambda_em_vt[i]<-lambda(Pu_em_U+Pu_em_F_vt)
   
   Pu_lifehistorypost$R0_ep[i]<-Pu_ep$Ro
   Pu_lifehistorypost$G_ep[i]<-Pu_ep$generation.time
-  Pu_lifehistorypost$lambda_ep[i]<-Pu_ep$lambda
   Pu_lifehistorypost$pRep_ep[i]<-Pu_ep$pRep
   Pu_lifehistorypost$La_ep[i]<-Pu_ep$La
   Pu_lifehistorypost$matlifexp_ep[i]<-Pu_ep$remainingMatureLifeExpectancy
   Pu_lifehistorypost$meanelexp_ep[i]<-Pu_ep$meanelexp
   Pu_lifehistorypost$entropyd_ep[i]<-Pu_ep$entropyd
-  Pu_lifehistorypost$entropyk_ep[i]<-Pu_ep$entropyk
   Pu_lifehistorypost$gini_ep[i]<-Pu_ep$gini
   Pu_lifehistorypost$longevity_ep[i]<-Pu_ep$longevity
   Pu_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],6]+firstflower_params$beta[firstrepro_i[i],6]))
+  Pu_lifehistorypost$lambda_ep[i]<-lambda(Pu_ep_U+Pu_ep_F)#Pu_ep$lambda
+  Pu_lifehistorypost$lambda_ep_vt[i]<-lambda(Pu_ep_U+Pu_ep_F_vt)
+  
+  ##check ergodicity and irreducibility
+  Pu_lifehistorypost$isergodic<-isErgodic(Pu_ep_U+Pu_ep_F)
+  Pu_lifehistorypost$isirreducible<-isIrreducible(Pu_ep_U+Pu_ep_F)
   
   ##Poa sylvestris
   Ps_em_surv <- invlogit(c(Ps_par$beta_Ps[survfert_i[i],"(Intercept)"],
@@ -1729,46 +1827,58 @@ for(i in 1:n_post){
                       Ps_par_fert$beta_Ps[survfert_i[i],"(Intercept)"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(endo_01)1"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)5"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)5:as.factor(endo_01)1"],
                       Ps_par_fert$beta_Ps[survfert_i[i],"(Intercept)"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(endo_01)1"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)6"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)6:as.factor(endo_01)1"],
                       Ps_par_fert$beta_Ps[survfert_i[i],"(Intercept)"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(endo_01)1"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)7"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)7:as.factor(endo_01)1"])))
-  Ps_em_U<-Ps_em_F<-Ps_ep_U<-Ps_ep_F<-matrix(0,Ps_dim,Ps_dim)
+  Ps_vt<-0.9#placeholder
+  
+  Ps_em_U<-Ps_em_F<-Ps_ep_U<-Ps_ep_F<-Ps_em_F_vt<-Ps_ep_F_vt<-matrix(0,Ps_dim,Ps_dim)
+  diag(Ps_em_U[-1,-ncol(Ps_em_U)])<-c(0,Ps_em_surv[1:7])
+  Ps_em_U[Ps_dim,Ps_dim]<-Ps_em_surv[8]
+  diag(Ps_ep_U[-1,-ncol(Ps_ep_U)])<-c(0,Ps_ep_surv[1:7])
+  Ps_ep_U[Ps_dim,Ps_dim]<-Ps_ep_surv[8]
+  #hostE-
   Ps_em_F[1,2:Ps_dim]<-Ps_em_fert
   Ps_em_F[2,1]<-r2_em[7]
   Ps_em_F[2,2:Ps_dim]<-r1_em[7]*Ps_em_fert
-  diag(Ps_em_U[-1,-ncol(Ps_em_U)])<-c(0,Ps_em_surv[1:7])
-  Ps_em_U[Ps_dim,Ps_dim]<-Ps_em_surv[8]
+  #symbiontE-
+  Ps_em_F_vt[1,2:Ps_dim]<-Ps_em_fert*Ps_vt
+  Ps_em_F_vt[2,1]<-r2_em[7]
+  Ps_em_F_vt[2,2:Ps_dim]<-r1_em[7]*Ps_em_fert*Ps_vt
+  #hostE+
   Ps_ep_F[1,2:Ps_dim]<-Ps_ep_fert
   Ps_ep_F[2,1]<-r2_ep[7]
   Ps_ep_F[2,2:Ps_dim]<-r1_ep[7]*Ps_ep_fert
-  diag(Ps_ep_U[-1,-ncol(Ps_ep_U)])<-c(0,Ps_ep_surv[1:7])
-  Ps_ep_U[Ps_dim,Ps_dim]<-Ps_ep_surv[8]
+  #symbiontE+
+  Ps_ep_F_vt[1,2:Ps_dim]<-Ps_ep_fert*Ps_vt
+  Ps_ep_F_vt[2,1]<-r2_ep[7]
+  Ps_ep_F_vt[2,2:Ps_dim]<-r1_ep[7]*Ps_ep_fert*Ps_vt
+  
   Ps_em<-lifeTimeRepEvents(Ps_em_U,Ps_em_F,2)
   Ps_ep<-lifeTimeRepEvents(Ps_ep_U,Ps_ep_F,2)
   ##store outputs
   Ps_lifehistorypost$R0_em[i]<-Ps_em$Ro
   Ps_lifehistorypost$G_em[i]<-Ps_em$generation.time
-  Ps_lifehistorypost$lambda_em[i]<-Ps_em$lambda
   Ps_lifehistorypost$pRep_em[i]<-Ps_em$pRep
   Ps_lifehistorypost$La_em[i]<-Ps_em$La
   Ps_lifehistorypost$matlifexp_em[i]<-Ps_em$remainingMatureLifeExpectancy
   Ps_lifehistorypost$meanelexp_em[i]<-Ps_em$meanelexp
   Ps_lifehistorypost$entropyd_em[i]<-Ps_em$entropyd
-  Ps_lifehistorypost$entropyk_em[i]<-Ps_em$entropyk
   Ps_lifehistorypost$gini_em[i]<-Ps_em$gini
   Ps_lifehistorypost$longevity_em[i]<-Ps_em$longevity
   Ps_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],7]))
+  Ps_lifehistorypost$lambda_em[i]<-lamdba(Ps_em_U+Ps_em_F)#Ps_em$lambda
+  Ps_lifehistorypost$lambda_em_vt[i]<-lamdba(Ps_em_U+Ps_em_F_vt)
   
   Ps_lifehistorypost$R0_ep[i]<-Ps_ep$Ro
   Ps_lifehistorypost$G_ep[i]<-Ps_ep$generation.time
-  Ps_lifehistorypost$lambda_ep[i]<-Ps_ep$lambda
   Ps_lifehistorypost$pRep_ep[i]<-Ps_ep$pRep
   Ps_lifehistorypost$La_ep[i]<-Ps_ep$La
   Ps_lifehistorypost$matlifexp_ep[i]<-Ps_ep$remainingMatureLifeExpectancy
   Ps_lifehistorypost$meanelexp_ep[i]<-Ps_ep$meanelexp
   Ps_lifehistorypost$entropyd_ep[i]<-Ps_ep$entropyd
-  Ps_lifehistorypost$entropyk_ep[i]<-Ps_ep$entropyk
   Ps_lifehistorypost$gini_ep[i]<-Ps_ep$gini
   Ps_lifehistorypost$longevity_ep[i]<-Ps_ep$longevity
   Ps_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],7]+firstflower_params$beta[firstrepro_i[i],7]))
-  
+  Ps_lifehistorypost$lambda_ep[i]<-lambda(Ps_ep_U+Ps_ep_F)#Ps_ep$lambda
+  Ps_lifehistorypost$lambda_ep_vt[i]<-lambda(Ps_ep_U+Ps_ep_F_vt)
 }##end posterior sample loop
 
 ## combine species in to single data frame
@@ -1803,7 +1913,7 @@ surv_data<-ltreb_age_lump %>% select(species,endo_01,id,plot,year_t,age,age_lump
 
 ## take each species as a data subset -- this helps keep track of the parameters
 Ap_surv <- surv_data %>% filter(species=="AGPE") %>% droplevels()
-Xs_Ap<-model.matrix(~as.factor(age_lump) * as.factor(endo_01) + flw_count_t * as.factor(endo_01),data=Ap_surv)
+Xs_Ap<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Ap_surv)
 
 Er_surv <- surv_data %>% filter(species=="ELRI") %>% droplevels()
 Xs_Er<-model.matrix(~as.factor(age_lump) * as.factor(endo_01)  + flw_count_t * as.factor(endo_01),data=Er_surv)
