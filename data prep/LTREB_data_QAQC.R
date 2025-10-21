@@ -151,7 +151,13 @@ which(poau$inf_number_spring_t1-floor(poau$inf_number_spring_t1)>0)
 ## https://doi.org/10.6073/pasta/ea7db07a578fb030a173f37f76596b62 (Accessed 2024-03-26).
 ## read in data and apply some of the data transformations used above
 ## here i am reading in directly from the data package github
-indiana<-read.csv("https://raw.githubusercontent.com/texmiller/LTREB-data-package/refs/heads/master/LDW_LTREB_20072022.csv")
+## indiana<-read.csv("https://raw.githubusercontent.com/texmiller/LTREB-data-package/refs/heads/master/LDW_LTREB_20072022.csv")
+
+##update 10/20/2025 -- akiem and tom found an issue with agpe 2022 (see endodemog_data_processing.R)
+##here we now read in the updated version of the EDI data set from the local drive
+indiana<-read.csv("C:/Users/tm9/Dropbox/github/LTREB-data-package/LDW_LTREB_20072022.csv")
+
+
 indiana %>% 
   rowwise %>% 
   mutate(mean_spike_t = mean(c_across(c(spike_a_t,spike_b_t,spike_c_t)),na.rm=T),
