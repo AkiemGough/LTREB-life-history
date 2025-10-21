@@ -68,7 +68,7 @@ lifeTimeRepEvents <- function(matU, matF, startLife = 1) {
   # Demetrius' entropy
   out$entropyd<-Rage::entropy_d(lx, mx)
   # calculate Keyfitz' entropy
-  out$entropyk<-Rage::entropy_k(lx)
+  #out$entropyk<-Rage::entropy_k(lx)
   # shape of survival/mortality trajectory
   out$ssmt<-Rage::shape_surv(lx) 
   # shape of fecundity trajectory
