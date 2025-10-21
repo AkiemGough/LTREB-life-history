@@ -43,13 +43,18 @@ length(unique(ltreb$id))
 ## what are the age limits we can use for each species
 table(ltreb$age,ltreb$species,ltreb$endo_01)
 
+## what is the fraction of total individuals that are natural recruits?
+ltreb_allplants %>% 
+  select(species,original,id) %>% unique %>% 
+  summarise(mean(original==0))
+
 ## make a table for the manuscript
 em_tab <- table(ltreb$age[ltreb$endo_01==0],ltreb$species[ltreb$endo_01==0])
 ep_tab <- table(ltreb$age[ltreb$endo_01==1],ltreb$species[ltreb$endo_01==1])
-tab<-cbind(c(rep(0,times=nrow(em_tab)),rep(1,times=nrow(ep_tab))),
+tab<-cbind(c(rep("S-",times=nrow(em_tab)),rep("S+",times=nrow(ep_tab))),
            as.integer(c(rownames(em_tab),rownames(ep_tab))),
            rbind(em_tab,ep_tab))
-colnames(tab)[1:2]<-c("Endo","Age")
+colnames(tab)[1:2]<-c("Endo","Age (years)")
 ## Appendix Table
 print(xtable(tab,digits=0),include.rownames=FALSE)
 
@@ -1307,8 +1312,11 @@ dev.off()
 
 
 # vertical transmission ---------------------------------------------------
-
-
+##values used below come from Afkhami & Rudgers 2008 Table 1
+## except Poa autumnalis, which comes from our surveys here:
+TX_seeds<-read.csv("data prep/Texas_endophyte_surveys.csv")
+Pu_seeds<-TX_seeds[TX_seeds$speciesID=="POAU" & TX_seeds$s.eplus>0,]
+Pu_seeds$vt<-(Pu_seeds$s.eplus+Pu_seeds$add..s.eplus)/(Pu_seeds$s.scored+Pu_seeds$add..s.scored)
 
 # Assemble list of matrices from posterior samples ------------------------
 
@@ -1422,6 +1430,10 @@ for(i in 1:n_post){
   Ap_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],1]+firstflower_params$beta[firstrepro_i[i],1]))
   Ap_lifehistorypost$lambda_ep[i]<-lambda(Ap_ep_U+Ap_ep_F)#Ap_ep$lambda
   
+  ##check ergodicity and irreducibility
+  Ap_lifehistorypost$isergodic<-isErgodic(Ap_ep_U+Ap_ep_F)
+  Ap_lifehistorypost$isirreducible<-isIrreducible(Ap_ep_U+Ap_ep_F)
+  
   ## Elymus villosus
   #collect parameter estimates
   Er_em_surv <- invlogit(c(Er_par$beta_Er[survfert_i[i],"(Intercept)"],
@@ -1434,7 +1446,7 @@ for(i in 1:n_post){
                       Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"])))
   Er_ep_fert <- c(0,exp(c(Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"],
                       Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"])))
-  Er_vt <- 0.9#placeholder
+  Er_vt <- 0.833
   
   #set up matrices
   Er_em_U<-Er_em_F<-Er_ep_U<-Er_ep_F<-Er_em_F_vt<-Er_ep_F_vt<-matrix(0,Er_dim,Er_dim)
@@ -1510,7 +1522,7 @@ for(i in 1:n_post){
   Ev_ep_fert <- c(0,exp(c(Ev_par_fert$beta_Ev[survfert_i[i],"(Intercept)"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(endo_01)1"],
                       Ev_par_fert$beta_Ev[survfert_i[i],"(Intercept)"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(endo_01)1"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)2"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"],
                       Ev_par_fert$beta_Ev[survfert_i[i],"(Intercept)"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(endo_01)1"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)3"]+Ev_par_fert$beta_Ev[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"])))
-  Ev_vt <- 0.9#placeholder
+  Ev_vt <- 0.769
   
   Ev_em_U<-Ev_em_F<-Ev_ep_U<-Ev_ep_F<-Ev_em_F_vt<-Ev_ep_F_vt<-matrix(0,Ev_dim,Ev_dim)
 
@@ -1595,7 +1607,7 @@ for(i in 1:n_post){
                       Fs_par_fert$beta_Fs[survfert_i[i],"(Intercept)"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(endo_01)1"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)3"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"],
                       Fs_par_fert$beta_Fs[survfert_i[i],"(Intercept)"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(endo_01)1"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)4"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)4:as.factor(endo_01)1"],
                       Fs_par_fert$beta_Fs[survfert_i[i],"(Intercept)"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(endo_01)1"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)5"]+Fs_par_fert$beta_Fs[survfert_i[i],"as.factor(age_lump)5:as.factor(endo_01)1"])))
-  Fs_vt <- 0.9#placeholder
+  Fs_vt <- mean(0.837,0.695,0.995)##Three populations in Table 1
 
   Fs_em_U<-Fs_em_F<-Fs_ep_U<-Fs_ep_F<-Fs_em_F_vt<-Fs_ep_F_vt<-matrix(0,Fs_dim,Fs_dim)
   diag(Fs_em_U[-1,-ncol(Fs_em_U)])<-c(0,Fs_em_surv[1:5])
@@ -1701,7 +1713,7 @@ for(i in 1:n_post){
   Pa_lifehistorypost$longevity_em[i]<-Pa_em$longevity
   Pa_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],5]))
   Pa_lifehistorypost$lambda_em[i]<-lambda(Pa_em_U+Pa_em_F)#Pa_em$lambda
-  Pa_lifehistorypost$lambda_em_vt[i]<lambda(Pa_em_U+Pa_em_F_vt)
+  Pa_lifehistorypost$lambda_em_vt[i]<-lambda(Pa_em_U+Pa_em_F_vt)
   
   Pa_lifehistorypost$R0_ep[i]<-Pa_ep$Ro
   Pa_lifehistorypost$G_ep[i]<-Pa_ep$generation.time
@@ -1739,7 +1751,7 @@ for(i in 1:n_post){
                       Pu_par_fert$beta_Pu[survfert_i[i],"(Intercept)"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(endo_01)1"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)2"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"],
                       Pu_par_fert$beta_Pu[survfert_i[i],"(Intercept)"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(endo_01)1"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)3"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"],
                       Pu_par_fert$beta_Pu[survfert_i[i],"(Intercept)"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(endo_01)1"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)4"]+Pu_par_fert$beta_Pu[survfert_i[i],"as.factor(age_lump)4:as.factor(endo_01)1"])))
-  Pu_vt<-0.9#placeholder
+  Pu_vt<-mean(Pu_seeds$vt,na.rm=T)
   
   Pu_em_U<-Pu_em_F<-Pu_ep_U<-Pu_ep_F<-Pu_em_F_vt<-Pu_ep_F_vt<-matrix(0,Pu_dim,Pu_dim)
   diag(Pu_em_U[-1,-ncol(Pu_em_U)])<-c(0,Pu_em_surv[1:4])
@@ -1827,7 +1839,7 @@ for(i in 1:n_post){
                       Ps_par_fert$beta_Ps[survfert_i[i],"(Intercept)"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(endo_01)1"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)5"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)5:as.factor(endo_01)1"],
                       Ps_par_fert$beta_Ps[survfert_i[i],"(Intercept)"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(endo_01)1"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)6"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)6:as.factor(endo_01)1"],
                       Ps_par_fert$beta_Ps[survfert_i[i],"(Intercept)"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(endo_01)1"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)7"]+Ps_par_fert$beta_Ps[survfert_i[i],"as.factor(age_lump)7:as.factor(endo_01)1"])))
-  Ps_vt<-0.9#placeholder
+  Ps_vt<-0.83
   
   Ps_em_U<-Ps_em_F<-Ps_ep_U<-Ps_ep_F<-Ps_em_F_vt<-Ps_ep_F_vt<-matrix(0,Ps_dim,Ps_dim)
   diag(Ps_em_U[-1,-ncol(Ps_em_U)])<-c(0,Ps_em_surv[1:7])
@@ -1864,8 +1876,8 @@ for(i in 1:n_post){
   Ps_lifehistorypost$gini_em[i]<-Ps_em$gini
   Ps_lifehistorypost$longevity_em[i]<-Ps_em$longevity
   Ps_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],7]))
-  Ps_lifehistorypost$lambda_em[i]<-lamdba(Ps_em_U+Ps_em_F)#Ps_em$lambda
-  Ps_lifehistorypost$lambda_em_vt[i]<-lamdba(Ps_em_U+Ps_em_F_vt)
+  Ps_lifehistorypost$lambda_em[i]<-lambda(Ps_em_U+Ps_em_F)#Ps_em$lambda
+  Ps_lifehistorypost$lambda_em_vt[i]<-lambda(Ps_em_U+Ps_em_F_vt)
   
   Ps_lifehistorypost$R0_ep[i]<-Ps_ep$Ro
   Ps_lifehistorypost$G_ep[i]<-Ps_ep$generation.time
@@ -1879,6 +1891,11 @@ for(i in 1:n_post){
   Ps_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],7]+firstflower_params$beta[firstrepro_i[i],7]))
   Ps_lifehistorypost$lambda_ep[i]<-lambda(Ps_ep_U+Ps_ep_F)#Ps_ep$lambda
   Ps_lifehistorypost$lambda_ep_vt[i]<-lambda(Ps_ep_U+Ps_ep_F_vt)
+
+  ##check ergodicity and irreducibility
+  Ps_lifehistorypost$isergodic<-isErgodic(Ps_ep_U+Ps_ep_F)
+  Ps_lifehistorypost$isirreducible<-isIrreducible(Ps_ep_U+Ps_ep_F)
+  
 }##end posterior sample loop
 
 ## combine species in to single data frame

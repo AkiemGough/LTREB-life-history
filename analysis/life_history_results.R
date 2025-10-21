@@ -11,6 +11,10 @@ lifehistorypost<-read.csv("analysis/lifehistorypost.csv")
 ## add posterior draw -- we used 100 samples for each species
 lifehistorypost$draw<-rep(1:n_post,times=7) #n_post from vital rates script
 
+## check that matrices were ergodic and irreducible
+summary(lifehistorypost$isergodic)
+summary(lifehistorypost$isirreducible)
+
 # PCA ---------------------------------------------------------------------
 ## need to pivot trait data from wide to long
 ## select traits that will go into PCA
@@ -264,7 +268,6 @@ fviz_pca_biplot(lifehistory_pca, repel = TRUE,
 ## generate E+/E- contrasts
 lifehistorypost$R0_diff<-lifehistorypost$R0_ep-lifehistorypost$R0_em
 lifehistorypost$G_diff<-lifehistorypost$G_ep-lifehistorypost$G_em
-lifehistorypost$lambda_diff<-lifehistorypost$lambda_ep-lifehistorypost$lambda_em
 lifehistorypost$pRep_diff<-lifehistorypost$pRep_ep-lifehistorypost$pRep_em
 lifehistorypost$La_diff<-lifehistorypost$La_ep-lifehistorypost$La_em
 lifehistorypost$matlifexp_diff<-lifehistorypost$matlifexp_ep-lifehistorypost$matlifexp_em
@@ -274,6 +277,8 @@ lifehistorypost$entropyk_diff<-lifehistorypost$entropyk_ep-lifehistorypost$entro
 lifehistorypost$gini_diff<-lifehistorypost$gini_ep-lifehistorypost$gini_em
 lifehistorypost$longevity_diff<-lifehistorypost$longevity_ep-lifehistorypost$longevity_em
 lifehistorypost$firstrepro_diff<-lifehistorypost$firstrepro_ep-lifehistorypost$firstrepro_em
+lifehistorypost$lambda_diff<-lifehistorypost$lambda_ep-lifehistorypost$lambda_em
+lifehistorypost$lambda_vt_diff<-lifehistorypost$lambda_ep_vt-lifehistorypost$lambda_em_vt
 
 ## data frame for life history effects
 lifehistorypost %>% 
@@ -319,11 +324,82 @@ ggsave("manuscript/figures/LHtraits_heatmap.jpg",
        units = "in")
 
 ## effects on net fitness (lambda)
+lifehistorypost %>% 
+  group_by(species) %>% 
+  summarise(mean(lambda_ep),
+            mean(lambda_ep_vt),
+            mean(lambda_em),
+            mean(lambda_em_vt)) %>% View
+which(is.na(lifehistorypost$lambda_em_vt))
 
 ##lambda
 ggplot(lifehistorypost,aes(lambda_diff,fill=species,col=species))+
   geom_density(alpha=0.1)+geom_vline(xintercept=0)+
   facet_wrap(~species,scales="free")
+
+ggplot(lifehistorypost,aes(lambda_vt_diff,fill=species,col=species))+
+  geom_density(alpha=0.1)+geom_vline(xintercept=0)+
+  facet_wrap(~species,scales="free")
+
+# 1) Long format + relabel
+lifehistory_long <- lifehistorypost %>%
+  pivot_longer(
+    cols = c(lambda_diff, lambda_vt_diff),
+    names_to = "parameter",
+    values_to = "value"
+  ) %>%
+  mutate(parameter = recode(parameter,
+                            "lambda_diff" = "Host",
+                            "lambda_vt_diff" = "Symbiont"))
+
+# compute posterior means
+means_df <- lifehistory_long %>%
+  group_by(species, parameter) %>%
+  summarise(mu = mean(value), .groups = "drop") %>%
+  # offset y values so Host and Symbiont don't overlap
+  mutate(ypos = ifelse(parameter == "Host", 0.002, 0.1))
+
+facet_tags <- lifehistory_long %>%
+  distinct(species) %>%
+  arrange(species) %>%
+  mutate(tag = LETTERS[row_number()])
+
+host_symbiont_lambdadiff<-ggplot(lifehistory_long,
+       aes(x = value, color = parameter, linetype = parameter)) +
+  geom_density(size = 1) +
+  geom_vline(xintercept = 0, linetype = "dashed") +
+  # posterior mean points (slightly separated in y)
+  geom_point(data = means_df,
+             aes(x = mu, y = ypos, color = parameter, shape = parameter),
+             inherit.aes = FALSE, size = 3) +
+  facet_wrap(~ species, scales = "free",
+             labeller = as_labeller(c(
+               "AGPE" = "italic(Agrostis~pernnans)",
+               "ELRI" = "italic(Elymus~villosus)",
+               "ELVI" = "italic(Elymus~virginicus)",
+               "FESU" = "italic(Festuca~subverticillata)",
+               "POAL" = "italic(Poa~alsodes)",
+               "POAU" = "italic(Poa~autumnalis)",
+               "POSY" = "italic(Poa~sylvestris)"), 
+               label_parsed)) +
+  theme_classic(base_size = 12) +
+  labs(
+    x = expression("Fitness difference (" * lambda["S+"] - lambda["S-"] * ")"),
+    y = "Probability density",
+    color = NULL,
+    linetype = NULL,
+    shape = NULL
+  ) +
+  theme(legend.title = element_blank(),
+    strip.background = element_blank(),
+    plot.margin = margin(12, 12, 12, 24)
+  )
+ggsave("manuscript/figures/host_symbiont_lambdadiff.jpg",
+       plot = host_symbiont_lambdadiff,
+       width = 8,      # width in inches
+       height = 6,      # height in inches
+       dpi = 300,       # resolution
+       units = "in")
 
 
 lifehistorypost %>% 
