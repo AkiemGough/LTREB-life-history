@@ -70,13 +70,9 @@ lifeTimeRepEvents <- function(matU, matF, startLife = 1) {
   # calculate Keyfitz' entropy
   #out$entropyk<-Rage::entropy_k(lx)
   # shape of survival/mortality trajectory
-  out$ssmt<-Rage::shape_surv(lx) 
+  out$shape_surv<-Rage::shape_surv(lx) 
   # shape of fecundity trajectory
-  out$sft<-Rage::shape_rep(lx)
-  #Spread of reproduction:  Gini index function `Gini` from the `ineq` package.
-  ssmt<-Rage::shape_surv(lx) 
-  sft<-Rage::shape_rep(lx)
-  out$gini<-ineq::Gini(ssmt*sft,corr = F)
+  out$shape_rep<-Rage::shape_rep(lx)
   return(out)
 }
 
