@@ -1944,22 +1944,22 @@ Ap_surv <- surv_data %>% filter(species=="AGPE") %>% droplevels()
 Xs_Ap<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Ap_surv)
 
 Er_surv <- surv_data %>% filter(species=="ELRI") %>% droplevels()
-Xs_Er<-model.matrix(~as.factor(age_lump) * as.factor(endo_01)  + flw_count_t * as.factor(endo_01),data=Er_surv)
+Xs_Er<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Er_surv)
 
 Ev_surv <- surv_data %>% filter(species=="ELVI") %>% droplevels()
-Xs_Ev<-model.matrix(~as.factor(age_lump) * as.factor(endo_01)  + flw_count_t * as.factor(endo_01),data=Ev_surv)
+Xs_Ev<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Ev_surv)
 
 Fs_surv <- surv_data %>% filter(species=="FESU") %>% droplevels()
-Xs_Fs<-model.matrix(~as.factor(age_lump) * as.factor(endo_01)  + flw_count_t * as.factor(endo_01),data=Fs_surv)
+Xs_Fs<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Fs_surv)
 
 Pa_surv <- surv_data %>% filter(species=="POAL") %>% droplevels()
-Xs_Pa<-model.matrix(~as.factor(age_lump) * as.factor(endo_01) + flw_count_t * as.factor(endo_01),data=Pa_surv)
+Xs_Pa<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Pa_surv)
 
 Pu_surv <- surv_data %>% filter(species=="POAU") %>% droplevels()
-Xs_Pu<-model.matrix(~as.factor(age_lump) * as.factor(endo_01) + flw_count_t * as.factor(endo_01),data=Pu_surv)
+Xs_Pu<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Pu_surv)
 
 Ps_surv <- surv_data %>% filter(species=="POSY") %>% droplevels()
-Xs_Ps<-model.matrix(~as.factor(age_lump) * as.factor(endo_01) + flw_count_t * as.factor(endo_01),data=Ps_surv)
+Xs_Ps<-model.matrix(~(flw_count_t>0) * as.factor(endo_01),data=Ps_surv)
 
 stan_dat_surv <- list(n_spp=7,
                       n_years=max(surv_data$year_index),
@@ -2018,7 +2018,7 @@ survival_model <- stan_model("analysis/Stan/ltreb_age_survival.stan")
 surv_fit_cor<-sampling(survival_model,data = stan_dat_surv,
                    chains=3,
                    control = list(adapt_delta=0.99,stepsize=0.1),
-                   iter=8000,thin=2,
+                   iter=5000,thin=3,
                    pars = c("beta_Ap","beta_Er",
                             "beta_Ev","beta_Fs",
                             "beta_Pa","beta_Pu",
@@ -2028,33 +2028,14 @@ surv_fit_cor<-sampling(survival_model,data = stan_dat_surv,
 surv_fit_cor<-readRDS("analysis/Stan/surv_fit_cor.rds")
 
 ## pull out inf coefficients
-which(colnames(Xs_Ap)=="flw_count_t");which(colnames(Xs_Ap)=="as.factor(endo_01)1:flw_count_t")
-bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Ap[8]","beta_Ap[14]"))
-Ap_betainf <- rstan::extract(surv_fit_cor,pars=c("beta_Ap[8]","beta_Ap[14]"))
-
-which(colnames(Xs_Er)=="flw_count_t");which(colnames(Xs_Er)=="as.factor(endo_01)1:flw_count_t")
-bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Er[5]","beta_Er[8]"))
-Er_betainf <- rstan::extract(surv_fit_cor,pars=c("beta_Er[5]","beta_Er[8]"))
-
-which(colnames(Xs_Ev)=="flw_count_t");which(colnames(Xs_Ev)=="as.factor(endo_01)1:flw_count_t")
-bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Ev[6]","beta_Ev[10]"))
-Ev_betainf <- rstan::extract(surv_fit_cor,pars=c("beta_Ev[6]","beta_Ev[10]"))
-
-which(colnames(Xs_Fs)=="flw_count_t");which(colnames(Xs_Fs)=="as.factor(endo_01)1:flw_count_t")
-bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Fs[8]","beta_Fs[14]"))
-Fs_betainf <- rstan::extract(surv_fit_cor,pars=c("beta_Fs[8]","beta_Fs[14]"))
-
-which(colnames(Xs_Pa)=="flw_count_t");which(colnames(Xs_Pa)=="as.factor(endo_01)1:flw_count_t")
-bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Pa[5]","beta_Pa[8]"))
-Pa_betainf <- rstan::extract(surv_fit_cor,pars=c("beta_Pa[5]","beta_Pa[8]"))
-
-which(colnames(Xs_Ps)=="flw_count_t");which(colnames(Xs_Ps)=="as.factor(endo_01)1:flw_count_t")
-bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Ps[10]","beta_Ps[18]"))
-Ps_betainf <- rstan::extract(surv_fit_cor,pars=c("beta_Ps[10]","beta_Ps[18]"))
-
-which(colnames(Xs_Pu)=="flw_count_t");which(colnames(Xs_Pu)=="as.factor(endo_01)1:flw_count_t")
-bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Pu[7]","beta_Pu[12]"))
-Ps_betainf <- rstan::extract(surv_fit_cor,pars=c("beta_Pu[7]","beta_Pu[12]"))
+which(colnames(Xs_Ap)=="flw_count_t > 0TRUE");which(colnames(Xs_Ap)=="flw_count_t > 0TRUE:as.factor(endo_01)1")
+bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Ap[2]","beta_Ap[4]"))
+bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Er[2]","beta_Er[4]"))
+bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Ev[2]","beta_Ev[4]"))
+bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Fs[2]","beta_Fs[4]"))
+bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Pa[2]","beta_Pa[4]"))
+bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Ps[2]","beta_Ps[4]"))
+bayesplot::mcmc_trace(surv_fit_cor,pars = c("beta_Pu[2]","beta_Pu[4]"))
 
 
 colnames(Xs_Er)
