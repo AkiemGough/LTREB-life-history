@@ -57,6 +57,8 @@ tab<-cbind(c(rep("S-",times=nrow(em_tab)),rep("S+",times=nrow(ep_tab))),
 colnames(tab)[1:2]<-c("Endo","Age (years)")
 ## Appendix Table
 print(xtable(tab,digits=0),include.rownames=FALSE)
+## note: Equatio does not recognize the table environment so chatgpt converted this
+## latex code into an array -- that's what's in the manuscript table
 
 ## DESCRIPTIVE STATS FOR MANUSCRIPT
 ## what is the oldest individual and 
@@ -74,7 +76,15 @@ ltreb %>% group_by(id) %>% summarise(max_age=max(age)) %>% summarise(mean_life=m
 ltreb %>% 
   group_by(id) %>% 
   summarise(n_bouts=sum(flw_count_t>0),
-            flowered=n_bouts>0) %>% summarise(mean(!flowered,na.rm=T))
+            flowered=n_bouts>0) %>% 
+  summarise(mean(!flowered,na.rm=T))
+## look by species
+ltreb %>% 
+  group_by(species,id) %>% 
+  summarise(n_bouts=sum(flw_count_t>0),
+            flowered=n_bouts>0) %>% 
+  group_by(species) %>% 
+  summarise(mean(!flowered,na.rm=T))
 
 ## we need a criterion for the max age that we will try to model
 ## before lumping tail ages as "old"
@@ -426,7 +436,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
          (0:5)+.1,Ap_ep_surv[4,1:6],length=0,lwd=3,col="cornflowerblue")
   arrows((0:5)+.1,Ap_ep_surv[1,1:6],
          (0:5)+.1,Ap_ep_surv[5,1:6],length=0,lwd=1,col="cornflowerblue")
-  title(expression("A) "*italic("Agrostis perennans")*" (AGPE)"),adj=0)
+  title(expression("A) "*italic("Agrostis perennans")),adj=0)
   axis(1,at=0:5,labels=c("0","1","2","3","4","5+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   legend(-0.5,0.9,c("S+","S-"),pch=16,col=c("cornflowerblue","tomato"))
@@ -447,7 +457,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
          (0:2)+.1,Er_ep_surv[4,1:3],length=0,lwd=3,col="cornflowerblue")
   arrows((0:2)+.1,Er_ep_surv[1,1:3],
          (0:2)+.1,Er_ep_surv[5,1:3],length=0,lwd=1,col="cornflowerblue")
-  title(expression("B) "*italic("Elymus villosus")*" (ELRI)"),adj=0)
+  title(expression("B) "*italic("Elymus villosus")),adj=0)
   axis(1,at=0:2,labels=c("0","1","2+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
@@ -467,7 +477,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
          (0:3)+.1,Ev_ep_surv[4,1:4],length=0,lwd=3,col="cornflowerblue")
   arrows((0:3)+.1,Ev_ep_surv[1,1:4],
          (0:3)+.1,Ev_ep_surv[5,1:4],length=0,lwd=1,col="cornflowerblue")
-  title(expression("C) "*italic("Elymus virginicus")*" (ELVI)"),adj=0)
+  title(expression("C) "*italic("Elymus virginicus")),adj=0)
   axis(1,at=0:3,labels=c("0","1","2","3+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
@@ -487,7 +497,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
          (0:5)+.1,Fs_ep_surv[4,1:6],length=0,lwd=3,col="cornflowerblue")
   arrows((0:5)+.1,Fs_ep_surv[1,1:6],
          (0:5)+.1,Fs_ep_surv[5,1:6],length=0,lwd=1,col="cornflowerblue")
-  title(expression("D) "*italic("Festuca subverticillata")*" (FESU)"),adj=0)
+  title(expression("D) "*italic("Festuca subverticillata")),adj=0)
   axis(1,at=0:5,labels=c("0","1","2","3","4","5+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
@@ -507,7 +517,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
          (0:2)+.1,Pa_ep_surv[4,1:3],length=0,lwd=3,col="cornflowerblue")
   arrows((0:2)+.1,Pa_ep_surv[1,1:3],
          (0:2)+.1,Pa_ep_surv[5,1:3],length=0,lwd=1,col="cornflowerblue")
-  title(expression("E) "*italic("Poa alsodes")*" (POAL)"),adj=0)
+  title(expression("E) "*italic("Poa alsodes")),adj=0)
   axis(1,at=0:2,labels=c("0","1","2+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
@@ -527,7 +537,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
          (0:4)+.1,Pu_ep_surv[4,1:5],length=0,lwd=3,col="cornflowerblue")
   arrows((0:4)+.1,Pu_ep_surv[1,1:5],
          (0:4)+.1,Pu_ep_surv[5,1:5],length=0,lwd=1,col="cornflowerblue")
-  title(expression("F) "*italic("Poa autumnalis")*" (POAU)"),adj=0)
+  title(expression("F) "*italic("Poa autumnalis")),adj=0)
   axis(1,at=0:4,labels=c("0","1","2","3","4+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
@@ -547,7 +557,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
          (0:7)+.1,Ps_ep_surv[4,1:8],length=0,lwd=3,col="cornflowerblue")
   arrows((0:7)+.1,Ps_ep_surv[1,1:8],
          (0:7)+.1,Ps_ep_surv[5,1:8],length=0,lwd=1,col="cornflowerblue")
-  title(expression("G) "*italic("Poa sylvestris")*" (POSY)"),adj=0)
+  title(expression("G) "*italic("Poa sylvestris")),adj=0)
   axis(1,at=0:7,labels=c("0","1","2","3","4","5","6","7+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
@@ -562,8 +572,9 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
           posterior_summary_surv$prob_pos[posterior_summary_surv$species==spp_list[sp]], 
           col = species_colors[sp], lwd = 2) 
   }
-  legend("bottomright", legend = spp_list, col = species_colors,
-         lty = 1, lwd = 2, cex = 0.5)
+  legend("bottomright", ncol=2,
+         legend = c("A.p.","E.vil.","E.vir.","F.s.","P.al.","P.au.","P.s."), col = species_colors,
+         lty = 1, lwd = 2, cex = 0.75, text.font=3)
 }
 dev.off()
 
@@ -916,7 +927,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
          (1:5)+.1,Ap_ep_fert[4,1:5],length=0,lwd=3,col="cornflowerblue")
   arrows((1:5)+.1,Ap_ep_fert[1,1:5],
          (1:5)+.1,Ap_ep_fert[5,1:5],length=0,lwd=1,col="cornflowerblue")
-  title(expression("A) "*italic("Agrostis perennans")*" (AGPE)"),adj=0)
+  title(expression("A) "*italic("Agrostis perennans")),adj=0)
   axis(1,at=1:5,labels=c("1","2","3","4","5+"))
   axis(2,at=0:round(quantile(Ap_fert$flw_count_t,ylim_quantile)))
   legend("topright",c("S+","S-"),pch=16,col=c("cornflowerblue","tomato"))
@@ -937,7 +948,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
          (1:2)+.1,Er_ep_fert[4,1:2],length=0,lwd=3,col="cornflowerblue")
   arrows((1:2)+.1,Er_ep_fert[1,1:2],
          (1:2)+.1,Er_ep_fert[5,1:2],length=0,lwd=1,col="cornflowerblue")
-  title(expression("B) "*italic("Elymus villosus")*" (ELRI)"),adj=0)
+  title(expression("B) "*italic("Elymus villosus")),adj=0)
   axis(1,at=1:2,labels=c("1","2+"))
   axis(2,at=0:round(quantile(Er_fert$flw_count_t,ylim_quantile)))
   
@@ -957,7 +968,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
          (1:3)+.1,Ev_ep_fert[4,1:3],length=0,lwd=3,col="cornflowerblue")
   arrows((1:3)+.1,Ev_ep_fert[1,1:3],
          (1:3)+.1,Ev_ep_fert[5,1:3],length=0,lwd=1,col="cornflowerblue")
-  title(expression("C) "*italic("Elymus virginicus")*" (ELVI)"),adj=0)
+  title(expression("C) "*italic("Elymus virginicus")),adj=0)
   axis(1,at=1:3,labels=c("1","2","3+"))
   axis(2,at=0:round(quantile(Ev_fert$flw_count_t,ylim_quantile)))
   
@@ -977,7 +988,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
          (1:5)+.1,Fs_ep_fert[4,1:5],length=0,lwd=3,col="cornflowerblue")
   arrows((1:5)+.1,Fs_ep_fert[1,1:5],
          (1:5)+.1,Fs_ep_fert[5,1:5],length=0,lwd=1,col="cornflowerblue")
-  title(expression("D) "*italic("Festuca subverticillata")*" (FESU)"),adj=0)
+  title(expression("D) "*italic("Festuca subverticillata")),adj=0)
   axis(1,at=1:5,labels=c("1","2","3","4","5+"))
   axis(2,at=0:round(quantile(Fs_fert$flw_count_t,ylim_quantile)))
   
@@ -997,7 +1008,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
          (1:2)+.1,Pa_ep_fert[4,1:2],length=0,lwd=3,col="cornflowerblue")
   arrows((1:2)+.1,Pa_ep_fert[1,1:2],
          (1:2)+.1,Pa_ep_fert[5,1:2],length=0,lwd=1,col="cornflowerblue")
-  title(expression("E) "*italic("Poa alsodes")*" (POAL)"),adj=0)
+  title(expression("E) "*italic("Poa alsodes")),adj=0)
   axis(1,at=1:2,labels=c("1","2+"))
   axis(2,at=0:round(quantile(Pa_fert$flw_count_t,ylim_quantile)))
   ##note different y lim for Pu
@@ -1017,7 +1028,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
          (1:4)+.1,Pu_ep_fert[4,1:4],length=0,lwd=3,col="cornflowerblue")
   arrows((1:4)+.1,Pu_ep_fert[1,1:4],
          (1:4)+.1,Pu_ep_fert[5,1:4],length=0,lwd=1,col="cornflowerblue")
-  title(expression("F) "*italic("Poa autumnalis")*" (POAU)"),adj=0)
+  title(expression("F) "*italic("Poa autumnalis")),adj=0)
   axis(1,at=1:4,labels=c("1","2","3","4+"))
   axis(2,at=0:round(quantile(Pu_fert$flw_count_t,ylim_quantile)))
   
@@ -1037,7 +1048,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
          (1:7)+.1,Ps_ep_fert[4,1:7],length=0,lwd=3,col="cornflowerblue")
   arrows((1:7)+.1,Ps_ep_fert[1,1:7],
          (1:7)+.1,Ps_ep_fert[5,1:7],length=0,lwd=1,col="cornflowerblue")
-  title(expression("G) "*italic("Poa sylvestris")*" (POSY)"),adj=0)
+  title(expression("G) "*italic("Poa sylvestris")),adj=0)
   axis(1,at=1:7,labels=c("1","2","3","4","5","6","7+"))
   axis(2,at=0:round(quantile(Ps_fert$flw_count_t,ylim_quantile)))
   
@@ -1052,7 +1063,7 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
           posterior_summary_fert$prob_pos[posterior_summary_fert$species==spp_list[sp]], 
           col = species_colors[sp], lwd = 2) 
   }
-  legend("topleft", legend = spp_list, col = species_colors,
+  legend("topleft", legend = c("A.p.","E.vil.","E.vir.","F.s.","P.al.","P.au.","P.s."), col = species_colors,
          lty = 1, lwd = 2, cex = 0.5, ncol=3)
 }
 dev.off()
