@@ -157,7 +157,6 @@ which(poau$inf_number_spring_t1-floor(poau$inf_number_spring_t1)>0)
 ##here we now read in the updated version of the EDI data set from the local drive
 indiana<-read.csv("C:/Users/tm9/Dropbox/github/LTREB-data-package/LDW_LTREB_20072022.csv")
 
-
 indiana %>% 
   rowwise %>% 
   mutate(mean_spike_t = mean(c_across(c(spike_a_t,spike_b_t,spike_c_t)),na.rm=T),
@@ -168,6 +167,7 @@ which(indiana$flw_count_t-floor(indiana$flw_count_t)>0)#fine
 which(indiana$flw_count_t1-floor(indiana$flw_count_t1)>0)#fine
 #indiana[which(indiana$size_t-floor(indiana$size_t)>0),] %>% View
 #indiana[which(indiana$size_t1-floor(indiana$size_t1)>0),] %>% View
+## there are 15-16 rows (mostly POSY) with non-integer tiller counts
 ## not sure what's up with these so I will reassign as NA
 indiana[which(indiana$size_t-floor(indiana$size_t)>0),"size_t"]<-NA
 indiana[which(indiana$size_t1-floor(indiana$size_t1)>0),"size_t1"]<-NA
@@ -181,13 +181,15 @@ table(indiana$age) #no there are way more 0s
 ## this must be because the recruit data were managed differently in the early years
 ## all the -1s (first appearance in year t1) started in 2016 or later
 
-## check that -1 ages are always cases with no data in year_t - FUCK
+## check that -1 ages are always cases with no data in year_t 
+## which would be consistent with first appearance in year_t1 -- uh oh, problem here
 indiana[which(indiana$age==-1 & !is.na(indiana$size_t)),]->bad_plants
 #indiana %>% filter(id %in% bad_plants$id) %>% View
 ## note these are almost all 2017 birth year
-## I think this is OK, and that is reflect the idiosyncacry of
-## how the data transition happened in 2017/2018 at start of LTREB
-## As long as I filter -1 ages for age-specific estimates, it should be fine as is -TM 4/8/2025
+## some of these plants have sizes > 1 tiller prior to their birth year
+## I am not sure we can be confident in these birth years, hence ages, 
+## so I am choosing to drop all occurrences of these individuals - TM 11/11/2025
+## this happens below (indiana_no_problems)
 
 ## apply rule that if size is non-NA and inf count is NA, then inf count should be zero
 indiana$flw_count_t[!is.na(indiana$size_t) & is.na(indiana$flw_count_t)]<-0
@@ -198,15 +200,21 @@ indiana %>%
   group_by(id) %>% select(birth) %>% 
   summarize(nbirths=length(unique(birth,na.rm=T))) %>% 
   filter(nbirths>1)->birthyears_ind
-##there are 133 id's with multiple birth years
-##drop them for now
-indiana_no_problems <- indiana %>% filter(!(id %in% birthyears_ind$id))
+##there are 132 id's with multiple birth years
+##drop them, and drop bad plants
+indiana_no_problems <- indiana %>% 
+  filter(!(id %in% bad_plants$id)) %>% ##plants that had size data before their birth year
+  filter(!(id %in% birthyears_ind$id)) ##plants that had multiple birth years
 
 ##Bell sorted out most of the birth year problems (see Bell_birthyear_fixes.R)
 ##read in Bell's fixed data, then merge rows into main data
 birthyears_fixed<-read.csv("data prep/birth_year_fixes.csv")
 ##update age with new birth years
 birthyears_fixed$age<-birthyears_fixed$year_t-birthyears_fixed$birth
+
+##there should be no overlap in id's between indiana_no_problems and birthyears_fixed
+which(indiana_no_problems$id %in% birthyears_fixed$id)
+which(birthyears_fixed$id %in% indiana_no_problems$id)
 
 ##prepare indiana data for row bind with poau data -- take only the comlumns that match
 bind_rows(indiana_no_problems,birthyears_fixed[,paste(names(indiana_no_problems))]) %>% 
@@ -239,3 +247,33 @@ dim(poau_for_merge);dim(indiana_for_merge)
 ltreb<-bind_rows(indiana_for_merge,poau_for_merge)
 names(ltreb)
 write.csv(ltreb,"data prep/ltreb_allspp_qaqc.csv")
+
+
+# the basement ------------------------------------------------------------
+# the updated indiana data (see above) appear to give slightly different results, esp for POAL fertility
+# compare what we had originally (on EDI) with the new update
+indiana1<-read.csv("https://raw.githubusercontent.com/texmiller/LTREB-data-package/refs/heads/master/LDW_LTREB_20072022.csv")
+indiana2<-read.csv("C:/Users/tm9/Dropbox/github/LTREB-data-package/LDW_LTREB_20072022.csv")
+nrow(indiana1);nrow(indiana2)
+##how many non-NA flw_count_t per species?
+left_join(indiana1 %>% group_by(species) %>% summarise(sum(!is.na(flw_count_t))),
+  indiana2 %>% group_by(species) %>% summarise(sum(!is.na(flw_count_t))),
+  by="species")
+# There are no differences here
+
+##how many ELRI recruit flowering events?
+indiana1 %>% filter(species=="ELRI" & flw_count_t>0 & origin_01==1) %>% summarise((n()))
+indiana2 %>% filter(species=="ELRI" & flw_count_t>0 & origin_01==1) %>% summarise((n()))
+
+# check for differences in the derived data product
+ltreb1<-read.csv("data prep/ltreb_allspp_qaqc.csv")
+ltreb2<-read.csv("data prep/ltreb_allspp_qaqc_July2025.csv")
+nrow(ltreb1);nrow(ltreb2)
+##difference here -- in which species?
+left_join(ltreb1 %>% group_by(species) %>% summarise(nrows1=n()),
+          ltreb2 %>% group_by(species) %>% summarise(nrows2=n()),
+          by="species") %>% mutate(diff=nrows1-nrows2)
+
+left_join(ltreb1 %>% group_by(species) %>% summarise(n_flwcount1=sum(!is.na(flw_count_t))),
+          ltreb2 %>% group_by(species) %>% summarise(n_flwcount2=sum(!is.na(flw_count_t))),
+          by="species") %>% mutate(diff=n_flwcount1-n_flwcount2)
