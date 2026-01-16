@@ -9,6 +9,7 @@ library(xtable)
 library(popbio)
 library(patchwork)
 library(Rage)
+library(popdemo)
 
 ## functions
 invlogit<-function(x){exp(x)/(1+exp(x))}
@@ -231,13 +232,15 @@ propfx_Ap_surv<-(Ap_ep_surv_post - Ap_em_surv_post)/Ap_em_surv_post
 ## Elymus villosus
 Er_par <- rstan::extract(surv_fit,pars="beta_Er")
 colnames(Er_par$beta_Er)<-colnames(Xs_Er)
-age_limits %>% filter(species=="ELRI")## ELRI goes to lump age 2
+age_limits %>% filter(species=="ELRI")## ELRI goes to lump age 3
 Er_em_surv_post <- invlogit(cbind(Er_par$beta_Er[,"(Intercept)"],
                                    Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(age_lump)1"],
-                                   Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(age_lump)2"]))
+                                   Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(age_lump)2"],
+                                   Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(age_lump)3"]))
 Er_ep_surv_post <- invlogit(cbind(Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(endo_01)1"],
                                    Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(endo_01)1"]+Er_par$beta_Er[,"as.factor(age_lump)1"]+Er_par$beta_Er[,"as.factor(age_lump)1:as.factor(endo_01)1"],
-                                   Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(endo_01)1"]+Er_par$beta_Er[,"as.factor(age_lump)2"]+Er_par$beta_Er[,"as.factor(age_lump)2:as.factor(endo_01)1"]))
+                                   Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(endo_01)1"]+Er_par$beta_Er[,"as.factor(age_lump)2"]+Er_par$beta_Er[,"as.factor(age_lump)2:as.factor(endo_01)1"],
+                                   Er_par$beta_Er[,"(Intercept)"]+Er_par$beta_Er[,"as.factor(endo_01)1"]+Er_par$beta_Er[,"as.factor(age_lump)3"]+Er_par$beta_Er[,"as.factor(age_lump)3:as.factor(endo_01)1"]))
 Er_em_surv <- apply(Er_em_surv_post,2,quantile,probs=quantile_probs)
 Er_ep_surv <- apply(Er_ep_surv_post,2,quantile,probs=quantile_probs)
 propfx_Er_surv<-(Er_ep_surv_post - Er_em_surv_post)/Er_em_surv_post
@@ -337,7 +340,7 @@ propfx_Ps_surv<-(Ps_ep_surv_post - Ps_em_surv_post)/Ps_em_surv_post
 ##visualize proportional endo effects across standardized age
 # Define covariate levels (x-axis)
 relage_Ap <- 0:5/5; colnames(propfx_Ap_surv)<-relage_Ap
-relage_Er <- 0:2/2; colnames(propfx_Er_surv)<-relage_Er
+relage_Er <- 0:3/3; colnames(propfx_Er_surv)<-relage_Er
 relage_Ev <- 0:3/3; colnames(propfx_Ev_surv)<-relage_Ev
 relage_Fs <- 0:5/5; colnames(propfx_Fs_surv)<-relage_Fs
 relage_Pa <- 0:2/2; colnames(propfx_Pa_surv)<-relage_Pa
@@ -442,23 +445,23 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
   legend(-0.5,0.9,c("S+","S-"),pch=16,col=c("cornflowerblue","tomato"))
   
   plot(Er_surv$age_lump,Er_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
-       xlim=c(-0.5,2.5),axes=F)
+       xlim=c(-0.5,3.5),axes=F)
   points(jitter(Er_surv$age_lump[Er_surv$endo_01==0])-0.25,
          jitter(Er_surv$surv_t1[Er_surv$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
   points(jitter(Er_surv$age_lump[Er_surv$endo_01==1])+0.25,
          jitter(Er_surv$surv_t1[Er_surv$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-  points((0:2)-.1,Er_em_surv[3,1:3],pch=16,cex=2,col="tomato")
-  arrows((0:2)-.1,Er_em_surv[2,1:3],
-         (0:2)-.1,Er_em_surv[4,1:3],length=0,lwd=3,col="tomato")
-  arrows((0:2)-.1,Er_em_surv[1,1:3],
-         (0:2)-.1,Er_em_surv[5,1:3],length=0,lwd=1,col="tomato")
-  points((0:2)+.1,Er_ep_surv[3,1:3],pch=16,cex=2,col="cornflowerblue")
-  arrows((0:2)+.1,Er_ep_surv[2,1:3],
-         (0:2)+.1,Er_ep_surv[4,1:3],length=0,lwd=3,col="cornflowerblue")
-  arrows((0:2)+.1,Er_ep_surv[1,1:3],
-         (0:2)+.1,Er_ep_surv[5,1:3],length=0,lwd=1,col="cornflowerblue")
+  points((0:3)-.1,Er_em_surv[3,1:4],pch=16,cex=2,col="tomato")
+  arrows((0:3)-.1,Er_em_surv[2,1:4],
+         (0:3)-.1,Er_em_surv[4,1:4],length=0,lwd=3,col="tomato")
+  arrows((0:3)-.1,Er_em_surv[1,1:4],
+         (0:3)-.1,Er_em_surv[5,1:4],length=0,lwd=1,col="tomato")
+  points((0:3)+.1,Er_ep_surv[3,1:4],pch=16,cex=2,col="cornflowerblue")
+  arrows((0:3)+.1,Er_ep_surv[2,1:4],
+         (0:3)+.1,Er_ep_surv[4,1:4],length=0,lwd=3,col="cornflowerblue")
+  arrows((0:3)+.1,Er_ep_surv[1,1:4],
+         (0:3)+.1,Er_ep_surv[5,1:4],length=0,lwd=1,col="cornflowerblue")
   title(expression("B) "*italic("Elymus villosus")),adj=0)
-  axis(1,at=0:2,labels=c("0","1","2+"))
+  axis(1,at=0:3,labels=c("0","1","2","3+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
   plot(Ev_surv$age_lump,Ev_surv$surv_t1,type="n",xlab="Age group",ylab="Survival",
@@ -736,11 +739,13 @@ propfx_Ap_fert<-(Ap_ep_fert_post - Ap_em_fert_post)/Ap_em_fert_post
 ## Elymus villosus
 Er_par_fert <- rstan::extract(fert_fit,pars="beta_Er")
 colnames(Er_par_fert$beta_Er)<-colnames(Xf_Er)
-age_limits %>% filter(species=="ELRI")## ELRI goes to lump age 2
+age_limits %>% filter(species=="ELRI")## ELRI goes to lump age 3
 Er_em_fert_post <- exp(cbind(Er_par_fert$beta_Er[,"(Intercept)"],
-                                   Er_par_fert$beta_Er[,"(Intercept)"]+Er_par_fert$beta_Er[,"as.factor(age_lump)2"]))
+                             Er_par_fert$beta_Er[,"(Intercept)"]+Er_par_fert$beta_Er[,"as.factor(age_lump)2"],
+                             Er_par_fert$beta_Er[,"(Intercept)"]+Er_par_fert$beta_Er[,"as.factor(age_lump)3"]))
 Er_ep_fert_post <- exp(cbind(Er_par_fert$beta_Er[,"(Intercept)"]+Er_par_fert$beta_Er[,"as.factor(endo_01)1"],
-                                   Er_par_fert$beta_Er[,"(Intercept)"]+Er_par_fert$beta_Er[,"as.factor(endo_01)1"]+Er_par_fert$beta_Er[,"as.factor(age_lump)2"]+Er_par_fert$beta_Er[,"as.factor(age_lump)2:as.factor(endo_01)1"]))
+                             Er_par_fert$beta_Er[,"(Intercept)"]+Er_par_fert$beta_Er[,"as.factor(endo_01)1"]+Er_par_fert$beta_Er[,"as.factor(age_lump)2"]+Er_par_fert$beta_Er[,"as.factor(age_lump)2:as.factor(endo_01)1"],
+                             Er_par_fert$beta_Er[,"(Intercept)"]+Er_par_fert$beta_Er[,"as.factor(endo_01)1"]+Er_par_fert$beta_Er[,"as.factor(age_lump)3"]+Er_par_fert$beta_Er[,"as.factor(age_lump)3:as.factor(endo_01)1"]))
 Er_em_fert<-apply(Er_em_fert_post,2,quantile,probs=quantile_probs)
 Er_ep_fert<-apply(Er_ep_fert_post,2,quantile,probs=quantile_probs)
 propfx_Er_fert<-(Er_ep_fert_post - Er_em_fert_post)/Er_em_fert_post
@@ -933,23 +938,23 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
   legend("topright",c("S+","S-"),pch=16,col=c("cornflowerblue","tomato"))
   
   plot(Er_fert$age_lump,Er_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
-       xlim=c(0.5,2.5),ylim=c(0,quantile(Er_fert$flw_count_t,ylim_quantile)),axes=F)
+       xlim=c(0.5,3.5),ylim=c(0,quantile(Er_fert$flw_count_t,ylim_quantile)),axes=F)
   points(jitter(Er_fert$age_lump[Er_fert$endo_01==0])-0.25,
          jitter(Er_fert$flw_count_t[Er_fert$endo_01==0],factor=0.1),col=alpha("tomato",0.25))
   points(jitter(Er_fert$age_lump[Er_fert$endo_01==1])+0.25,
          jitter(Er_fert$flw_count_t[Er_fert$endo_01==1],factor=0.1),col=alpha("cornflowerblue",0.25))
-  points((1:2)-.1,Er_em_fert[3,1:2],pch=16,cex=2,col="tomato")
-  arrows((1:2)-.1,Er_em_fert[2,1:2],
-         (1:2)-.1,Er_em_fert[4,1:2],length=0,lwd=3,col="tomato")
-  arrows((1:2)-.1,Er_em_fert[1,1:2],
-         (1:2)-.1,Er_em_fert[5,1:2],length=0,lwd=1,col="tomato")
-  points((1:2)+.1,Er_ep_fert[3,1:2],pch=16,cex=2,col="cornflowerblue")
-  arrows((1:2)+.1,Er_ep_fert[2,1:2],
-         (1:2)+.1,Er_ep_fert[4,1:2],length=0,lwd=3,col="cornflowerblue")
-  arrows((1:2)+.1,Er_ep_fert[1,1:2],
-         (1:2)+.1,Er_ep_fert[5,1:2],length=0,lwd=1,col="cornflowerblue")
+  points((1:3)-.1,Er_em_fert[3,1:3],pch=16,cex=2,col="tomato")
+  arrows((1:3)-.1,Er_em_fert[2,1:3],
+         (1:3)-.1,Er_em_fert[4,1:3],length=0,lwd=3,col="tomato")
+  arrows((1:3)-.1,Er_em_fert[1,1:3],
+         (1:3)-.1,Er_em_fert[5,1:3],length=0,lwd=1,col="tomato")
+  points((1:3)+.1,Er_ep_fert[3,1:3],pch=16,cex=2,col="cornflowerblue")
+  arrows((1:3)+.1,Er_ep_fert[2,1:3],
+         (1:3)+.1,Er_ep_fert[4,1:3],length=0,lwd=3,col="cornflowerblue")
+  arrows((1:3)+.1,Er_ep_fert[1,1:3],
+         (1:3)+.1,Er_ep_fert[5,1:3],length=0,lwd=1,col="cornflowerblue")
   title(expression("B) "*italic("Elymus villosus")),adj=0)
-  axis(1,at=1:2,labels=c("1","2+"))
+  axis(1,at=1:3,labels=c("1","2","3+"))
   axis(2,at=0:round(quantile(Er_fert$flw_count_t,ylim_quantile)))
   
   plot(Ev_fert$age_lump,Ev_fert$flw_count_t,type="n",xlab="Age group",ylab="Fertility (# infs)",
@@ -1245,6 +1250,7 @@ ltreb %>%
          year_index = year-(min(year)-1))->first_flower_ages 
 table(first_flower_ages$first_flower_age)
 ##Following the same logic as in the fertility model, we do not believe that these plants can flower at age 0
+##these are mostly AGPE 2020 and 2021 -- Mark years
 first_flower_ages %>% filter(first_flower_age>0) -> first_flower_ages
 
 #who first flowered at 7??
@@ -1362,9 +1368,10 @@ LH_dat<-data.frame(draw=rep(NA,n_post),R0_em=rep(NA,n_post),R0_ep=rep(NA,n_post)
                                meanelexp_em=rep(NA,n_post),meanelexp_ep=rep(NA,n_post),
                                entropyd_em=rep(NA,n_post),entropyd_ep=rep(NA,n_post),
                                entropyk_em=rep(NA,n_post),entropyk_ep=rep(NA,n_post),
-                               gini_em=rep(NA,n_post),gini_ep=rep(NA,n_post),
                                firstrepro_em=rep(NA,n_post),firstrepro_ep=rep(NA,n_post),
-                               isergodic=rep(NA,n_post),isirreducible=rep(NA,n_post))
+                               isergodic=rep(NA,n_post),isirreducible=rep(NA,n_post),
+                               shape_surv_em=rep(NA,n_post),shape_surv_ep=rep(NA,n_post),
+                               shape_rep_em=rep(NA,n_post),shape_rep_ep=rep(NA,n_post))
 Ap_lifehistorypost<-Er_lifehistorypost<-Ev_lifehistorypost<-Fs_lifehistorypost<-Pa_lifehistorypost<-Pu_lifehistorypost<-Ps_lifehistorypost<-LH_dat
 
 for(i in 1:n_post){
@@ -1424,8 +1431,9 @@ for(i in 1:n_post){
   Ap_lifehistorypost$matlifexp_em[i]<-Ap_em$remainingMatureLifeExpectancy
   Ap_lifehistorypost$meanelexp_em[i]<-Ap_em$meanelexp
   Ap_lifehistorypost$entropyd_em[i]<-Ap_em$entropyd
-  Ap_lifehistorypost$gini_em[i]<-Ap_em$gini
   Ap_lifehistorypost$longevity_em[i]<-Ap_em$longevity
+  Ap_lifehistorypost$shape_surv_em[i]<-Ap_em$shape_surv
+  Ap_lifehistorypost$shape_rep_em[i]<-Ap_em$shape_rep
   Ap_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],1]))
   Ap_lifehistorypost$lambda_em[i]<-lambda(Ap_em_U+Ap_em_F)#Ap_em$lambda
   
@@ -1436,8 +1444,9 @@ for(i in 1:n_post){
   Ap_lifehistorypost$matlifexp_ep[i]<-Ap_ep$remainingMatureLifeExpectancy
   Ap_lifehistorypost$meanelexp_ep[i]<-Ap_ep$meanelexp
   Ap_lifehistorypost$entropyd_ep[i]<-Ap_ep$entropyd
-  Ap_lifehistorypost$gini_ep[i]<-Ap_ep$gini
   Ap_lifehistorypost$longevity_ep[i]<-Ap_ep$longevity
+  Ap_lifehistorypost$shape_surv_ep[i]<-Ap_em$shape_surv
+  Ap_lifehistorypost$shape_rep_ep[i]<-Ap_em$shape_rep
   Ap_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],1]+firstflower_params$beta[firstrepro_i[i],1]))
   Ap_lifehistorypost$lambda_ep[i]<-lambda(Ap_ep_U+Ap_ep_F)#Ap_ep$lambda
   
@@ -1449,22 +1458,26 @@ for(i in 1:n_post){
   #collect parameter estimates
   Er_em_surv <- invlogit(c(Er_par$beta_Er[survfert_i[i],"(Intercept)"],
                            Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)1"],
-                           Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)2"]))
+                           Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)2"],
+                           Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)3"]))
   Er_ep_surv <- invlogit(c(Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(endo_01)1"],
                            Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)1"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)1:as.factor(endo_01)1"],
-                           Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)2"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"]))
+                           Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)2"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"],
+                           Er_par$beta_Er[survfert_i[i],"(Intercept)"]+Er_par$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)3"]+Er_par$beta_Er[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"]))
   Er_em_fert <- c(0,exp(c(Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"],
-                      Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"])))
+                      Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"],
+                      Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)3"])))
   Er_ep_fert <- c(0,exp(c(Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"],
-                      Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"])))
+                      Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)2:as.factor(endo_01)1"],
+                      Er_par_fert$beta_Er[survfert_i[i],"(Intercept)"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(endo_01)1"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)3"]+Er_par_fert$beta_Er[survfert_i[i],"as.factor(age_lump)3:as.factor(endo_01)1"])))
   Er_vt <- 0.833
   
   #set up matrices
   Er_em_U<-Er_em_F<-Er_ep_U<-Er_ep_F<-Er_em_F_vt<-Er_ep_F_vt<-matrix(0,Er_dim,Er_dim)
-  diag(Er_em_U[-1,-ncol(Er_em_U)])<-c(0,Er_em_surv[1:2])
-  Er_em_U[Er_dim,Er_dim]<-Er_em_surv[3]
-  diag(Er_ep_U[-1,-ncol(Er_ep_U)])<-c(0,Er_ep_surv[1:2])
-  Er_ep_U[Er_dim,Er_dim]<-Er_ep_surv[3]
+  diag(Er_em_U[-1,-ncol(Er_em_U)])<-c(0,Er_em_surv[1:3])
+  Er_em_U[Er_dim,Er_dim]<-Er_em_surv[4]
+  diag(Er_ep_U[-1,-ncol(Er_ep_U)])<-c(0,Er_ep_surv[1:3])
+  Er_ep_U[Er_dim,Er_dim]<-Er_ep_surv[4]
   #host E- fertility
   Er_em_F[1,2:Er_dim]<-Er_em_fert
   Er_em_F[2,1]<-r2_em[2]
@@ -1492,8 +1505,9 @@ for(i in 1:n_post){
   Er_lifehistorypost$matlifexp_em[i]<-Er_em$remainingMatureLifeExpectancy
   Er_lifehistorypost$meanelexp_em[i]<-Er_em$meanelexp
   Er_lifehistorypost$entropyd_em[i]<-Er_em$entropyd
-  Er_lifehistorypost$gini_em[i]<-Er_em$gini
   Er_lifehistorypost$longevity_em[i]<-Er_em$longevity
+  Er_lifehistorypost$shape_surv_em[i]<-Er_em$shape_surv
+  Er_lifehistorypost$shape_rep_em[i]<-Er_em$shape_rep
   Er_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],2]))
   #E- host fitness
   Er_lifehistorypost$lambda_em[i]<-lambda(Er_em_U+Er_em_F)#Er_em$lambda
@@ -1507,8 +1521,9 @@ for(i in 1:n_post){
   Er_lifehistorypost$matlifexp_ep[i]<-Er_ep$remainingMatureLifeExpectancy
   Er_lifehistorypost$meanelexp_ep[i]<-Er_ep$meanelexp
   Er_lifehistorypost$entropyd_ep[i]<-Er_ep$entropyd
-  Er_lifehistorypost$gini_ep[i]<-Er_ep$gini
   Er_lifehistorypost$longevity_ep[i]<-Er_ep$longevity
+  Er_lifehistorypost$shape_surv_ep[i]<-Er_ep$shape_surv
+  Er_lifehistorypost$shape_rep_ep[i]<-Er_ep$shape_rep
   Er_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],2]+firstflower_params$beta[firstrepro_i[i],2]))
   #E+ host fitness
   Er_lifehistorypost$lambda_ep[i]<-lambda(Er_ep_U+Er_ep_F)#Er_ep$lambda
@@ -1568,8 +1583,9 @@ for(i in 1:n_post){
   Ev_lifehistorypost$matlifexp_em[i]<-Ev_em$remainingMatureLifeExpectancy
   Ev_lifehistorypost$meanelexp_em[i]<-Ev_em$meanelexp
   Ev_lifehistorypost$entropyd_em[i]<-Ev_em$entropyd
-  Ev_lifehistorypost$gini_em[i]<-Ev_em$gini
   Ev_lifehistorypost$longevity_em[i]<-Ev_em$longevity
+  Ev_lifehistorypost$shape_surv_em[i]<-Ev_em$shape_surv
+  Ev_lifehistorypost$shape_rep_em[i]<-Ev_em$shape_rep
   Ev_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],3]))
   #host E- fitness
   Ev_lifehistorypost$lambda_em[i]<-lambda(Ev_em_U+Ev_em_F)#Ev_em$lambda
@@ -1583,8 +1599,9 @@ for(i in 1:n_post){
   Ev_lifehistorypost$matlifexp_ep[i]<-Ev_ep$remainingMatureLifeExpectancy
   Ev_lifehistorypost$meanelexp_ep[i]<-Ev_ep$meanelexp
   Ev_lifehistorypost$entropyd_ep[i]<-Ev_ep$entropyd
-  Ev_lifehistorypost$gini_ep[i]<-Ev_ep$gini
   Ev_lifehistorypost$longevity_ep[i]<-Ev_ep$longevity
+  Ev_lifehistorypost$shape_surv_ep[i]<-Ev_ep$shape_surv
+  Ev_lifehistorypost$shape_rep_ep[i]<-Ev_ep$shape_rep
   Ev_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],3]+firstflower_params$beta[firstrepro_i[i],3]))
   #host E+ fitness
   Ev_lifehistorypost$lambda_ep[i]<-lambda(Ev_ep_U+Ev_ep_F)#Ev_ep$lambda
@@ -1652,8 +1669,9 @@ for(i in 1:n_post){
   Fs_lifehistorypost$matlifexp_em[i]<-Fs_em$remainingMatureLifeExpectancy
   Fs_lifehistorypost$meanelexp_em[i]<-Fs_em$meanelexp
   Fs_lifehistorypost$entropyd_em[i]<-Fs_em$entropyd
-  Fs_lifehistorypost$gini_em[i]<-Fs_em$gini
   Fs_lifehistorypost$longevity_em[i]<-Fs_em$longevity
+  Fs_lifehistorypost$shape_surv_em[i]<-Fs_em$shape_surv
+  Fs_lifehistorypost$shape_rep_em[i]<-Fs_em$shape_rep
   Fs_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],4]))
   Fs_lifehistorypost$lambda_em[i]<-lambda(Fs_em_U+Fs_em_F)#Fs_em$lambda
   Fs_lifehistorypost$lambda_em_vt[i]<-lambda(Fs_em_U+Fs_em_F_vt)
@@ -1665,8 +1683,9 @@ for(i in 1:n_post){
   Fs_lifehistorypost$matlifexp_ep[i]<-Fs_ep$remainingMatureLifeExpectancy
   Fs_lifehistorypost$meanelexp_ep[i]<-Fs_ep$meanelexp
   Fs_lifehistorypost$entropyd_ep[i]<-Fs_ep$entropyd
-  Fs_lifehistorypost$gini_ep[i]<-Fs_ep$gini
   Fs_lifehistorypost$longevity_ep[i]<-Fs_ep$longevity
+  Fs_lifehistorypost$shape_surv_ep[i]<-Fs_ep$shape_surv
+  Fs_lifehistorypost$shape_rep_ep[i]<-Fs_ep$shape_rep
   Fs_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],4]+firstflower_params$beta[firstrepro_i[i],4]))
   Fs_lifehistorypost$lambda_ep[i]<-lambda(Fs_ep_U+Fs_ep_F)#Fs_ep$lambda
   Fs_lifehistorypost$lambda_ep_vt[i]<-lambda(Fs_ep_U+Fs_ep_F_vt)
@@ -1720,8 +1739,9 @@ for(i in 1:n_post){
   Pa_lifehistorypost$matlifexp_em[i]<-Pa_em$remainingMatureLifeExpectancy
   Pa_lifehistorypost$meanelexp_em[i]<-Pa_em$meanelexp
   Pa_lifehistorypost$entropyd_em[i]<-Pa_em$entropyd
-  Pa_lifehistorypost$gini_em[i]<-Pa_em$gini
   Pa_lifehistorypost$longevity_em[i]<-Pa_em$longevity
+  Pa_lifehistorypost$shape_surv_em[i]<-Pa_em$shape_surv
+  Pa_lifehistorypost$shape_rep_em[i]<-Pa_em$shape_rep
   Pa_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],5]))
   Pa_lifehistorypost$lambda_em[i]<-lambda(Pa_em_U+Pa_em_F)#Pa_em$lambda
   Pa_lifehistorypost$lambda_em_vt[i]<-lambda(Pa_em_U+Pa_em_F_vt)
@@ -1733,8 +1753,9 @@ for(i in 1:n_post){
   Pa_lifehistorypost$matlifexp_ep[i]<-Pa_ep$remainingMatureLifeExpectancy
   Pa_lifehistorypost$meanelexp_ep[i]<-Pa_ep$meanelexp
   Pa_lifehistorypost$entropyd_ep[i]<-Pa_ep$entropyd
-  Pa_lifehistorypost$gini_ep[i]<-Pa_ep$gini
   Pa_lifehistorypost$longevity_ep[i]<-Pa_ep$longevity
+  Pa_lifehistorypost$shape_surv_ep[i]<-Pa_ep$shape_surv
+  Pa_lifehistorypost$shape_rep_ep[i]<-Pa_ep$shape_rep
   Pa_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],5]+firstflower_params$beta[firstrepro_i[i],5]))
   Pa_lifehistorypost$lambda_ep[i]<-lambda(Pa_ep_U+Pa_ep_F)#Pa_ep$lambda
   Pa_lifehistorypost$lambda_ep_vt[i]<-lambda(Pa_ep_U+Pa_ep_F_vt)
@@ -1796,8 +1817,9 @@ for(i in 1:n_post){
   Pu_lifehistorypost$matlifexp_em[i]<-Pu_em$remainingMatureLifeExpectancy
   Pu_lifehistorypost$meanelexp_em[i]<-Pu_em$meanelexp
   Pu_lifehistorypost$entropyd_em[i]<-Pu_em$entropyd
-  Pu_lifehistorypost$gini_em[i]<-Pu_em$gini
   Pu_lifehistorypost$longevity_em[i]<-Pu_em$longevity
+  Pu_lifehistorypost$shape_surv_em[i]<-Pu_em$shape_surv
+  Pu_lifehistorypost$shape_rep_em[i]<-Pu_em$shape_rep
   Pu_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],6]))
   Pu_lifehistorypost$lambda_em[i]<-lambda(Pu_em_U+Pu_em_F)#Pu_em$lambda
   Pu_lifehistorypost$lambda_em_vt[i]<-lambda(Pu_em_U+Pu_em_F_vt)
@@ -1809,8 +1831,9 @@ for(i in 1:n_post){
   Pu_lifehistorypost$matlifexp_ep[i]<-Pu_ep$remainingMatureLifeExpectancy
   Pu_lifehistorypost$meanelexp_ep[i]<-Pu_ep$meanelexp
   Pu_lifehistorypost$entropyd_ep[i]<-Pu_ep$entropyd
-  Pu_lifehistorypost$gini_ep[i]<-Pu_ep$gini
   Pu_lifehistorypost$longevity_ep[i]<-Pu_ep$longevity
+  Pu_lifehistorypost$shape_surv_ep[i]<-Pu_ep$shape_surv
+  Pu_lifehistorypost$shape_rep_ep[i]<-Pu_ep$shape_rep
   Pu_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],6]+firstflower_params$beta[firstrepro_i[i],6]))
   Pu_lifehistorypost$lambda_ep[i]<-lambda(Pu_ep_U+Pu_ep_F)#Pu_ep$lambda
   Pu_lifehistorypost$lambda_ep_vt[i]<-lambda(Pu_ep_U+Pu_ep_F_vt)
@@ -1884,8 +1907,9 @@ for(i in 1:n_post){
   Ps_lifehistorypost$matlifexp_em[i]<-Ps_em$remainingMatureLifeExpectancy
   Ps_lifehistorypost$meanelexp_em[i]<-Ps_em$meanelexp
   Ps_lifehistorypost$entropyd_em[i]<-Ps_em$entropyd
-  Ps_lifehistorypost$gini_em[i]<-Ps_em$gini
   Ps_lifehistorypost$longevity_em[i]<-Ps_em$longevity
+  Ps_lifehistorypost$shape_surv_em[i]<-Ps_em$shape_surv
+  Ps_lifehistorypost$shape_rep_em[i]<-Ps_em$shape_rep
   Ps_lifehistorypost$firstrepro_em[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],7]))
   Ps_lifehistorypost$lambda_em[i]<-lambda(Ps_em_U+Ps_em_F)#Ps_em$lambda
   Ps_lifehistorypost$lambda_em_vt[i]<-lambda(Ps_em_U+Ps_em_F_vt)
@@ -1897,8 +1921,9 @@ for(i in 1:n_post){
   Ps_lifehistorypost$matlifexp_ep[i]<-Ps_ep$remainingMatureLifeExpectancy
   Ps_lifehistorypost$meanelexp_ep[i]<-Ps_ep$meanelexp
   Ps_lifehistorypost$entropyd_ep[i]<-Ps_ep$entropyd
-  Ps_lifehistorypost$gini_ep[i]<-Ps_ep$gini
   Ps_lifehistorypost$longevity_ep[i]<-Ps_ep$longevity
+  Ps_lifehistorypost$shape_surv_ep[i]<-Ps_ep$shape_surv
+  Ps_lifehistorypost$shape_rep_ep[i]<-Ps_ep$shape_rep
   Ps_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],7]+firstflower_params$beta[firstrepro_i[i],7]))
   Ps_lifehistorypost$lambda_ep[i]<-lambda(Ps_ep_U+Ps_ep_F)#Ps_ep$lambda
   Ps_lifehistorypost$lambda_ep_vt[i]<-lambda(Ps_ep_U+Ps_ep_F_vt)
@@ -1906,7 +1931,8 @@ for(i in 1:n_post){
   ##check ergodicity and irreducibility
   Ps_lifehistorypost$isergodic<-isErgodic(Ps_ep_U+Ps_ep_F)
   Ps_lifehistorypost$isirreducible<-isIrreducible(Ps_ep_U+Ps_ep_F)
-  
+
+print(i)  
 }##end posterior sample loop
 
 ## combine species in to single data frame
