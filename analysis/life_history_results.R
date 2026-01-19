@@ -6,10 +6,11 @@ library(factoextra)
 library(ggrepel)
 library(ggridges)
 library(patchwork)
+library(ggforce)
 ##read in life history outputs
 lifehistorypost<-read.csv("analysis/lifehistorypost.csv")
-## add posterior draw -- we used 100 samples for each species
-lifehistorypost$draw<-rep(1:n_post,times=7) #n_post from vital rates script
+## add posterior draw -- we used 500 samples for each species
+lifehistorypost$draw<-rep(1:500,times=7) #n_post from vital rates script
 
 ## check that matrices were ergodic and irreducible
 summary(lifehistorypost$isergodic)
@@ -46,9 +47,17 @@ lifehistorypost %>%
   select(draw,species,firstrepro_em,firstrepro_ep) %>% 
   pivot_longer(firstrepro_em:firstrepro_ep,names_to="endo",values_to="firstrepro") %>% 
   mutate(endo=case_when(endo=="firstrepro_em"~"S-",endo=="firstrepro_ep"~"S+"))->firstrepro
+lifehistorypost %>% 
+  select(draw,species,shape_surv_em,shape_surv_ep) %>% 
+  pivot_longer(shape_surv_em:shape_surv_ep,names_to="endo",values_to="shape_surv") %>% 
+  mutate(endo=case_when(endo=="shape_surv_em"~"S-",endo=="shape_surv_ep"~"S+"))->shape_surv
+lifehistorypost %>% 
+  select(draw,species,shape_rep_em,shape_rep_ep) %>% 
+  pivot_longer(shape_rep_em:shape_rep_ep,names_to="endo",values_to="shape_rep") %>% 
+  mutate(endo=case_when(endo=="shape_rep_em"~"S-",endo=="shape_rep_ep"~"S+"))->shape_rep
 
-pca.dat<-bind_cols(R0,G$G,meanelexp$meanelexp,longevity$longevity,entropyd$entropyd, firstrepro$firstrepro)
-names(pca.dat)<-c("Draw","Species","Endo","R0","Gen_time","Life_expect","Longevity","EntropyD","FirstRepro")
+pca.dat<-bind_cols(R0,G$G,meanelexp$meanelexp,longevity$longevity,entropyd$entropyd, firstrepro$firstrepro,shape_surv$shape_surv,shape_rep$shape_rep)
+names(pca.dat)<-c("Draw","Species","Endo","R0","GenTime","LifeExpect","Longevity","EntropyD","FirstRepro","ShapeSurv","ShapeRep")
 
 pca.dat %>% select(-Draw) %>% 
   group_by(Species,Endo) %>% 
@@ -59,6 +68,7 @@ pca_ref <- prcomp(mean.pca.dat[,-(1:2)], scale. = TRUE)
 ref_loadings <- pca_ref$rotation  # this is your fixed basis
 ref_center <- pca_ref$center
 ref_scale <- pca_ref$scale
+summary(pca_ref)
 
 ## align each posterior draw to the reference loadings
 ## calculate shift along PC1 and PC2
@@ -95,50 +105,99 @@ scores_df <- as_tibble(pca_ref$x[, 1:2], .name_repair = "unique") %>%
   mutate(Species = mean.pca.dat$Species,
          Endo = mean.pca.dat$Endo)
 arrows_df <- scores_df %>%
-  pivot_wider(names_from = Endo, values_from = c(PC1, PC2)) %>%
-  mutate(
-    x_start = `PC1_S-`,
-    y_start = `PC2_S-`,
-    x_end   = `PC1_S+`,
-    y_end   = `PC2_S+`)
+  pivot_wider(names_from = Endo, values_from = c(PC1, PC2)) %>% 
+  mutate(Species1 = recode(
+    Species,
+    POAL = "P.al.",
+    FESU = "F.s.",
+    AGPE = "A.p.",
+    POSY = "P.s.",
+    POAU = "P.au.",
+    ELVI = "E.vir.",
+    ELRI = "E.vil."),
+    Species2 = recode(
+      Species,
+      POAL = "Poa alsodes",
+      FESU = "Festuca subverticillata",
+      AGPE = "Agrostis perennans",
+      POSY = "Poa sylvestris",
+      POAU = "Poa autumnalis",
+      ELVI = "Elymus virginicus",
+      ELRI = "Elymus villosus"))
 loadings <- as_tibble(pca_ref$rotation[, 1:2], rownames = "Trait")
+
+##plot of PC vectors
+ggplot() +
+  geom_blank(data = scores_df, aes(x = PC1, y = PC2)) +
+  geom_segment(data = loadings,
+               aes(x = 0, y = 0, xend = PC1, yend = PC2, color=Trait),
+               arrow = arrow(length = unit(0.2, "cm")),
+               linewidth = 0.8) +
+  geom_text_repel(
+    data = loadings,
+    aes(x = PC1, y = PC2, label = Trait, color=Trait),
+    nudge_x = ifelse(loadings$PC1 > 0, 0.1, -0.1),
+    nudge_y = ifelse(loadings$PC2 > 0, 0.1, -0.1),
+    size = 4)+
+  scale_color_brewer(palette = "Dark2")+
+  #geom_text_repel(data = loadings,
+  #                aes(x = PC1+0.25, y = PC2+0.25, label = Trait),
+  #                color = "black", size = 4) +
+  theme_classic() +
+  guides(color = "none")+
+  labs(title = "A)",
+       x = "PC1 (80.6%)", y = NULL)+
+  annotate("text",
+           x = -Inf, y = 0,
+           label = "PC2 (9.3%)",
+           angle = 90,
+           vjust = -2.5, hjust = 0.5,   # tweak hjust if needed
+           size = 4) +
+  coord_cartesian(clip = "off") +
+  theme(plot.margin = margin(5.5, 5.5, 5.5, 5.5))->PCA_vectors
 
 ggplot() +
   geom_point(data = scores_df, aes(x = PC1, y = PC2, color = Endo), size = 4) +
   geom_segment(data = arrows_df,
-               aes(x = x_start, y = y_start, xend = x_end, yend = y_end),
+               aes(x = `PC1_S-`, y = `PC2_S-`, xend = `PC1_S+`, yend = `PC2_S+`),
                arrow = arrow(length = unit(0.2, "cm")),
                linewidth = 0.75,
                color = "black") +
   scale_color_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue")) +
-  geom_segment(data = loadings,
-               aes(x = 0, y = 0, xend = PC1, yend = PC2),
-               arrow = arrow(length = unit(0.2, "cm")),
-               linewidth = 0.6,
-               color = "gray80") +
-  geom_text_repel(data = loadings,
-                  aes(x = PC1, y = PC2, label = Trait),
-                  color = "gray80", size = 3) +
-  geom_text_repel(
+  geom_text(
     data = arrows_df,
-    aes(x = (x_start + x_end)/2, y = (y_start + y_end)/2, label = Species),
+    aes(x = ifelse(
+      Species1 %in% c("P.au.", "P.s."),
+      `PC1_S-` - 0.25,
+      `PC1_S-` + 0.25
+    ), y = `PC2_S-`, label = Species1,
+    hjust=ifelse(Species1 %in% c("P.au.", "P.s."),1,0)),
     size = 4,
     color = "black",
-    max.overlaps = Inf
+    max.overlaps = Inf,fontface = "italic"
   ) +
-  theme_classic() +
+  guides(color = guide_legend(title = NULL)) + theme_classic() +
   theme(
     legend.position = c(0.2, 0.9),   # (x, y) in normalized plot coordinates
     legend.background = element_rect(fill = "white", color = "black"),
     legend.title = element_text(size = 8),
     legend.text = element_text(size = 8)
   )+
-  labs(title = "A)",
-       x = "PC1", y = "PC2", color = "Symbiont status")->PCA_plot
+  labs(title = "B)",
+       x = "PC1 (80.6%)", y = "PC2 (9.3%)", color = "Symbiont status")->PCA_points
 
 ## Figure of posterior shifts
 lims1 <- quantile(posterior_shift_df$dPC1, probs = c(0.01, 0.99))
-ggplot(posterior_shift_df, aes(x = dPC1, y = Species, fill = stat(x))) + 
+posterior_shift_df$Species2<-rep(arrows_df$Species2,500)
+posterior_shift_df$Species2 <-
+  factor(posterior_shift_df$Species2,
+         levels = sort(unique(posterior_shift_df$Species2)))
+posterior_shift_means$Species2<-arrows_df$Species2
+posterior_shift_means$Species2 <-
+  factor(posterior_shift_means$Species2,
+         levels = levels(posterior_shift_df$Species2))
+
+ggplot(posterior_shift_df, aes(x = dPC1, y = Species2, fill = stat(x))) + 
   geom_density_ridges_gradient(scale = 1, rel_min_height = 0.01, color = "black", size = 0.3) +
   scale_fill_gradient2(
     low = "tomato",
@@ -149,12 +208,14 @@ ggplot(posterior_shift_df, aes(x = dPC1, y = Species, fill = stat(x))) +
     oob = scales::squish,  # squish outliers into endpoint colors
     name = "Shift"
   ) +  coord_cartesian(xlim = lims1) + 
-  theme_minimal(base_size = 13) + theme(legend.position = "none") +
-  labs(title = "B)",
-       x = expression(Delta~PC1), y = "Species")+ geom_vline(xintercept = 0)+
+  theme_minimal(base_size = 13) + theme(legend.position = "none",
+                                        axis.text.y = element_text(face = "italic"),
+                                        panel.grid = element_blank()) +
+  labs(title = "C)",
+       x = expression(Delta~PC1),y=NULL)+ geom_vline(xintercept = 0)+
   geom_point(
     data = posterior_shift_means,
-    aes(x = mean1, y = Species, color = direction1),  # now fill is mapped!
+    aes(x = mean1, y = Species2, color = direction1),  # now fill is mapped!
     inherit.aes = FALSE,
     shape = 16,
     size = 2
@@ -176,24 +237,26 @@ ggplot(posterior_shift_df, aes(x = dPC2, y = Species, fill = stat(x))) +
     name = "Shift"
   ) + coord_cartesian(xlim = lims1) + 
   theme_minimal(base_size = 13) + theme(legend.position = "none") +
-  labs(title = "C)",
-       x = expression(Delta~PC2), y = "Species")+ geom_vline(xintercept = 0)+
+  labs(title = "D)",
+       x = expression(Delta~PC2))+ geom_vline(xintercept = 0)+
   geom_point(
     data = posterior_shift_means,
     aes(x = mean2, y = Species, color = direction2),  # now fill is mapped!
     inherit.aes = FALSE,
     shape = 16,
-    size = 2
-  ) +
+    size = 2) + theme(panel.grid = element_blank(),
+    axis.text.y  = element_blank(),
+    axis.title.y = element_blank(),
+    axis.ticks.y = element_blank()) +
   scale_color_manual(
     values = c("positive" = "cornflowerblue", "negative" = "tomato")
   )-> PC2_plot
 
-PCA_combo <- PCA_plot / (PC1_plot | PC2_plot)
+PCA_combo <- (PCA_vectors | PCA_points) / (PC1_plot | PC2_plot)
 
 ggsave("manuscript/figures/pca_shift.jpg",
        plot = PCA_combo,
-       width = 6,      # width in inches
+       width = 9,      # width in inches
        height = 8,      # height in inches
        dpi = 300,       # resolution
        units = "in")
