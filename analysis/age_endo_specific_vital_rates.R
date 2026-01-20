@@ -1445,8 +1445,8 @@ for(i in 1:n_post){
   Ap_lifehistorypost$meanelexp_ep[i]<-Ap_ep$meanelexp
   Ap_lifehistorypost$entropyd_ep[i]<-Ap_ep$entropyd
   Ap_lifehistorypost$longevity_ep[i]<-Ap_ep$longevity
-  Ap_lifehistorypost$shape_surv_ep[i]<-Ap_em$shape_surv
-  Ap_lifehistorypost$shape_rep_ep[i]<-Ap_em$shape_rep
+  Ap_lifehistorypost$shape_surv_ep[i]<-Ap_ep$shape_surv
+  Ap_lifehistorypost$shape_rep_ep[i]<-Ap_ep$shape_rep
   Ap_lifehistorypost$firstrepro_ep[i]<- mean_trunc(exp(firstflower_params$alpha[firstrepro_i[i],1]+firstflower_params$beta[firstrepro_i[i],1]))
   Ap_lifehistorypost$lambda_ep[i]<-lambda(Ap_ep_U+Ap_ep_F)#Ap_ep$lambda
   
