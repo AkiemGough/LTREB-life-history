@@ -146,10 +146,10 @@ ggplot() +
   theme_classic() +
   guides(color = "none")+
   labs(title = "A)",
-       x = "PC1 (80.6%)", y = NULL)+
+       x = "PC1 (80.7%)", y = NULL)+
   annotate("text",
            x = -Inf, y = 0,
-           label = "PC2 (9.3%)",
+           label = "PC2 (9.4%)",
            angle = 90,
            vjust = -2.5, hjust = 0.5,   # tweak hjust if needed
            size = 4) +
@@ -184,7 +184,7 @@ ggplot() +
     legend.text = element_text(size = 8)
   )+
   labs(title = "B)",
-       x = "PC1 (80.6%)", y = "PC2 (9.3%)", color = "Symbiont status")->PCA_points
+       x = "PC1 (80.7%)", y = "PC2 (9.4%)", color = "Symbiont status")->PCA_points
 
 ## Figure of posterior shifts
 lims1 <- quantile(posterior_shift_df$dPC1, probs = c(0.01, 0.99))
@@ -285,48 +285,6 @@ posterior_shift_df %>%
             prob_shift1=mean(dPC1>0),
             prob_shift2=mean(dPC2>0))
 
-groups<-as.factor(mean.pca.dat$Endo)
-fviz_pca_biplot(pca_ref, repel = TRUE,
-                col.var = "gray", # Variables color
-                col.ind = groups, # color by groups
-                palette = c("tomato",  "cornflowerblue")  # Individuals color
-)+
-  annotate("segment",x=mean.pca.dat$x[c(1,3,5,7,9,11,13),1], 
-           y=mean.pca.dat$x[c(1,3,5,7,9,11,13),2], 
-           xend=mean.pca.dat$x[c(2,4,6,8,10,12,14),1], 
-           yend=mean.pca.dat$x[c(2,4,6,8,10,12,14),2],
-           arrow = arrow(length=unit(.4, 'cm')),col=alpha("cornflowerblue",0.25))+
-  theme(legend.position = "none")
-
-
-
-
-lifehistory_pca<-prcomp(pca.dat[pca.dat$Draw == 5, -(1:3)], center = FALSE, scale. = FALSE)
-plot(lifehistory_pca$x,pch=c(1,16))
-arrows(lifehistory_pca$x[c(1,3,5,7,9,11,13),1],
-       lifehistory_pca$x[c(1,3,5,7,9,11,13),2],
-       lifehistory_pca$x[c(2,4,6,8,10,12,14),1],
-       lifehistory_pca$x[c(2,4,6,8,10,12,14),2])
-
-fviz_pca_var(lifehistory_pca,
-             col.var = "contrib", # Color by contributions to the PC
-             gradient.cols = c("#00AFBB", "#E7B800", "#FC4E07"),
-             repel = TRUE     # Avoid text overlapping
-)
-
-groups<-as.factor(R0$endo)
-fviz_pca_biplot(lifehistory_pca, repel = TRUE,
-                col.var = "gray", # Variables color
-                col.ind = groups, # color by groups
-                palette = c("tomato",  "cornflowerblue")  # Individuals color
-)+
-  annotate("segment",x=lifehistory_pca$x[c(1,3,5,7,9,11,13),1], 
-                   y=lifehistory_pca$x[c(1,3,5,7,9,11,13),2], 
-                   xend=lifehistory_pca$x[c(2,4,6,8,10,12,14),1], 
-                   yend=lifehistory_pca$x[c(2,4,6,8,10,12,14),2],
-               arrow = arrow(length=unit(.4, 'cm')),col=alpha("cornflowerblue",0.25))+
-  theme(legend.position = "none")
-
 # posterior density plots of single traits ---------------------------------
 ## generate E+/E- contrasts
 lifehistorypost$R0_diff<-lifehistorypost$R0_ep-lifehistorypost$R0_em
@@ -337,54 +295,12 @@ lifehistorypost$matlifexp_diff<-lifehistorypost$matlifexp_ep-lifehistorypost$mat
 lifehistorypost$meanelexp_diff<-lifehistorypost$meanelexp_ep-lifehistorypost$meanelexp_em
 lifehistorypost$entropyd_diff<-lifehistorypost$entropyd_ep-lifehistorypost$entropyd_em
 lifehistorypost$entropyk_diff<-lifehistorypost$entropyk_ep-lifehistorypost$entropyk_em
-lifehistorypost$gini_diff<-lifehistorypost$gini_ep-lifehistorypost$gini_em
 lifehistorypost$longevity_diff<-lifehistorypost$longevity_ep-lifehistorypost$longevity_em
 lifehistorypost$firstrepro_diff<-lifehistorypost$firstrepro_ep-lifehistorypost$firstrepro_em
+lifehistorypost$shapesurv_diff<-lifehistorypost$shape_surv_ep-lifehistorypost$shape_surv_em
+lifehistorypost$shaperep_diff<-lifehistorypost$shape_rep_ep-lifehistorypost$shape_rep_em
 lifehistorypost$lambda_diff<-lifehistorypost$lambda_ep-lifehistorypost$lambda_em
 lifehistorypost$lambda_vt_diff<-lifehistorypost$lambda_ep_vt-lifehistorypost$lambda_em_vt
-
-## data frame for life history effects
-lifehistorypost %>% 
-  group_by(species) %>% 
-  summarise(`R0` = mean(R0_diff>0),
-            `Generation time` = mean(G_diff>0),
-            `Life expectancy` = mean(meanelexp_diff>0),
-            `Longevity` = mean(longevity_diff>0),
-            `Entropy` = mean(entropyd_diff>0),
-            `Reproductive age` = mean(firstrepro_diff>0))->life_history_effects
-
-life_history_effects %>%
-  pivot_longer(cols = -species, names_to = "metric", values_to = "probpos") %>% 
-  ggplot(aes(x = species, y = metric, fill = probpos)) +
-  geom_tile() +
-  scale_fill_gradientn(colors=c("tomato", "grey", "cornflowerblue")) + 
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(fill = "S+ Adv.e", x = "Species", y = "Metric", title = "Heatmap of Life History Metrics")
-
-life_history_effects %>%
-  pivot_longer(cols = -species, names_to = "metric", values_to = "probpos") %>% 
-  ggplot(aes(x = species, y = metric, fill = probpos)) +
-  geom_tile() +
-  geom_text(aes(label = sprintf("%.2f", probpos)), size = 3) +  # Add values to each tile
-  scale_fill_gradient2(
-    low = "tomato",
-    mid = "grey",
-    high = "cornflowerblue",
-    midpoint = 0.5,
-    limits = c(0, 1),
-    name = "Probability of\nS+ advantage"
-  ) + 
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Species", y = "Life history trait") -> LHtraits_heatmap
-
-ggsave("manuscript/figures/LHtraits_heatmap.jpg",
-       plot = LHtraits_heatmap,
-       width = 10,      # width in inches
-       height = 8,      # height in inches
-       dpi = 300,       # resolution
-       units = "in")
 
 ## effects on net fitness (lambda)
 lifehistorypost %>% 
@@ -508,7 +424,8 @@ lambdadiffplot<-ggplot(lifehistorypost, aes(x = lambda_diff, y = species, fill =
     size = 3
   ) +
   theme_minimal(base_size = 13) + theme(legend.position = "none") +
-  labs(x = expression("Endophyte effect on host fitness ("*Delta~lambda*")"), y = "Species")+ geom_vline(xintercept = 0)+ 
+  labs(x = expression("Endophyte effect on host fitness ("*Delta~lambda*")"), y = NULL)+ 
+  geom_vline(xintercept = 0)+ 
   geom_point(
     data = proportions_df,
     aes(x = mean_diff, y = species, color = direction),  # now fill is mapped!
@@ -518,7 +435,19 @@ lambdadiffplot<-ggplot(lifehistorypost, aes(x = lambda_diff, y = species, fill =
   ) +
   scale_color_manual(
     values = c("positive" = "cornflowerblue", "negative" = "tomato")
-  )
+  )+
+  scale_y_discrete(labels = c(
+    AGPE = "Agrostis perennans",
+    ELRI = "Elymus villosus",
+    ELVI = "Elymus virginicus",
+    FESU = "Festuca subverticillata",
+    POAL = "Poa alsodes",
+    POAU = "Poa autumnalis",
+    POSY = "Poa sylvestris"))+
+  theme(
+    axis.text.y = element_text(face = "italic", size = 12),
+    panel.grid = element_blank()
+  )+xlim(-0.5, 0.8)
 
 ggsave("manuscript/figures/lambdadiffplot.jpg",
        plot = lambdadiffplot,
@@ -527,6 +456,62 @@ ggsave("manuscript/figures/lambdadiffplot.jpg",
        dpi = 300,       # resolution
        units = "in")
 
+
+# individual life history traits ------------------------------------------
+ggplot(pca.dat,aes(x=ShapeSurv,fill=Endo))+geom_density(alpha=0.1)+
+  geom_vline(xintercept=0)+facet_wrap(~Species,scales="free")
+ggplot(pca.dat,aes(x=ShapeRep,fill=Endo))+geom_density(alpha=0.1)+
+  facet_wrap(~Species,scales="free")
+
+ggplot(pca.dat,aes(x=LifeExpect,fill=Endo))+geom_density(alpha=0.1)+
+  facet_wrap(~Species,scales="free")
+ggplot(pca.dat,aes(x=Longevity,fill=Endo))+geom_density(alpha=0.1)+
+  facet_wrap(~Species,scales="free")
+
+## data frame for life history effects
+lifehistorypost %>% 
+  group_by(species) %>% 
+  summarise(`R0` = mean(R0_diff>0),
+            `Generation time` = mean(G_diff>0),
+            `Life expectancy` = mean(meanelexp_diff>0),
+            `Longevity` = mean(longevity_diff>0),
+            `Entropy` = mean(entropyd_diff>0),
+            `Reproductive age` = mean(firstrepro_diff>0),
+            `Survival shape` = mean(shapesurv_diff>0),
+            `Reproduction shape` = mean(shaperep_diff>0))->life_history_effects
+
+life_history_effects %>%
+  pivot_longer(cols = -species, names_to = "metric", values_to = "probpos") %>% 
+  ggplot(aes(x = species, y = metric, fill = probpos)) +
+  geom_tile() +
+  scale_fill_gradientn(colors=c("tomato", "grey", "cornflowerblue")) + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(fill = "S+ Adv.e", x = "Species", y = "Metric", title = "Heatmap of Life History Metrics")
+
+life_history_effects %>%
+  pivot_longer(cols = -species, names_to = "metric", values_to = "probpos") %>% 
+  ggplot(aes(x = species, y = metric, fill = probpos)) +
+  geom_tile() +
+  geom_text(aes(label = sprintf("%.2f", probpos)), size = 3) +  # Add values to each tile
+  scale_fill_gradient2(
+    low = "tomato",
+    mid = "grey",
+    high = "cornflowerblue",
+    midpoint = 0.5,
+    limits = c(0, 1),
+    name = "Probability of\nS+ advantage"
+  ) + 
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  labs(x = "Species", y = "Life history trait") -> LHtraits_heatmap
+
+ggsave("manuscript/figures/LHtraits_heatmap.jpg",
+       plot = LHtraits_heatmap,
+       width = 10,      # width in inches
+       height = 8,      # height in inches
+       dpi = 300,       # resolution
+       units = "in")
 ##R0
 ggplot(lifehistorypost,aes(R0_diff,fill=species,col=species))+
   geom_density(alpha=0.1)+geom_vline(xintercept=0)+
