@@ -484,15 +484,6 @@ life_history_effects %>%
   pivot_longer(cols = -species, names_to = "metric", values_to = "probpos") %>% 
   ggplot(aes(x = species, y = metric, fill = probpos)) +
   geom_tile() +
-  scale_fill_gradientn(colors=c("tomato", "grey", "cornflowerblue")) + 
-  theme_minimal() +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(fill = "S+ Adv.e", x = "Species", y = "Metric", title = "Heatmap of Life History Metrics")
-
-life_history_effects %>%
-  pivot_longer(cols = -species, names_to = "metric", values_to = "probpos") %>% 
-  ggplot(aes(x = species, y = metric, fill = probpos)) +
-  geom_tile() +
   geom_text(aes(label = sprintf("%.2f", probpos)), size = 3) +  # Add values to each tile
   scale_fill_gradient2(
     low = "tomato",
@@ -500,11 +491,19 @@ life_history_effects %>%
     high = "cornflowerblue",
     midpoint = 0.5,
     limits = c(0, 1),
-    name = "Probability of\nS+ advantage"
+    name = "Pr(S+ > S-)"
   ) + 
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  labs(x = "Species", y = "Life history trait") -> LHtraits_heatmap
+  labs(x = "Species", y = "Life history trait")+
+  scale_x_discrete(labels = c(
+    AGPE = "Agrostis perennans",
+    ELRI = "Elymus villosus",
+    ELVI = "Elymus virginicus",
+    FESU = "Festuca subverticillata",
+    POAL = "Poa alsodes",
+    POAU = "Poa autumnalis",
+    POSY = "Poa sylvestris"))-> LHtraits_heatmap
 
 ggsave("manuscript/figures/LHtraits_heatmap.jpg",
        plot = LHtraits_heatmap,
