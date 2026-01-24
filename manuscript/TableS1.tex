@@ -7,6 +7,7 @@
 \usepackage{booktabs}   % nice horizontal rules
 \usepackage{array}
 \usepackage{pdflscape}
+\usepackage{multirow}
 
 \begin{document}
 	
@@ -45,5 +46,53 @@
 		\hline
 	\end{tabular}
 \end{table}
+
+\newpage
+\begin{table}[ht]
+	\centering
+	\begin{tabular}{llrrrr}
+		\toprule
+		Host species & Symbiosis & $N$ & Mean lifespan (years) & SD(lifespan) & Proportion that flowered \\
+		\midrule
+		
+		\multirow{2}{*}{\textit{Agrostis perennans}}
+		& S- & 1246 & 0.83 & 1.40 & 0.33 \\
+		& S+ & 1424 & 0.82 & 1.16 & 0.33 \\
+		\midrule
+		
+		\multirow{2}{*}{\textit{Elymus villosus}}
+		& S- & 383 & 0.44 & 1.33 & 0.03 \\
+		& S+ & 617 & 0.57 & 1.26 & 0.06 \\
+		\midrule
+		
+		\multirow{2}{*}{\textit{Elymus virginicus}}
+		& S- & 257 & 1.04 & 1.35 & 0.27 \\
+		& S+ & 483 & 0.81 & 1.44 & 0.13 \\
+		\midrule
+		
+		\multirow{2}{*}{\textit{Festuca subverticillata}}
+		& S- & 1276 & 0.57 & 1.13 & 0.06 \\
+		& S+ & 2919 & 0.67 & 1.40 & 0.11 \\
+		\midrule
+		
+		\multirow{2}{*}{\textit{Poa alsodes}}
+		& S- & 322 & 0.27 & 0.56 & 0.02 \\
+		& S+ & 1767 & 0.55 & 0.97 & 0.05 \\
+		\midrule
+		
+		\multirow{2}{*}{\textit{Poa autumnalis}}
+		& S- & 1106 & 0.36 & 0.92 & 0.07 \\
+		& S+ & 2518 & 0.44 & 0.99 & 0.09 \\
+		\midrule
+		
+		\multirow{2}{*}{\textit{Poa sylvestris}}
+		& S- & 3606 & 0.42 & 1.07 & 0.07 \\
+		& S+ & 9254 & 0.67 & 1.28 & 0.09 \\
+		
+		\bottomrule
+	\end{tabular}
+\end{table}
+
 \end{landscape}	
+
 \end{document}
