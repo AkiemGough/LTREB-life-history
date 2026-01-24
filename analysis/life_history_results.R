@@ -283,7 +283,10 @@ posterior_shift_df %>%
   summarise(mean_shift1=mean(dPC1),
             mean_shift2=mean(dPC2),
             prob_shift1=mean(dPC1>0),
-            prob_shift2=mean(dPC2>0))
+            prob_shift2=mean(dPC2>0))->PC_shifts
+## average shift across PC1 vs 2
+PC_shifts %>% 
+  summarise(mean1 = mean(abs(mean_shift1)), mean2 = mean(abs(mean_shift2)))
 
 # posterior density plots of single traits ---------------------------------
 ## generate E+/E- contrasts
