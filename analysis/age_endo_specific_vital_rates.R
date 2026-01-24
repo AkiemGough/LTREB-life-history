@@ -70,6 +70,7 @@ ltreb %>%
 ltreb %>% 
   group_by(id,species) %>% 
   summarise(n_bouts=sum(flw_count_t>0)) %>% arrange(desc(n_bouts))
+
 ## what is mean lifespan across all the data?
 ltreb %>% group_by(id) %>% summarise(max_age=max(age)) %>% summarise(mean_life=mean(max_age),
                                                                      sd_life=sd(max_age))
@@ -79,13 +80,29 @@ ltreb %>%
   summarise(n_bouts=sum(flw_count_t>0),
             flowered=n_bouts>0) %>% 
   summarise(mean(!flowered,na.rm=T))
-## look by species
-ltreb %>% 
-  group_by(species,id) %>% 
-  summarise(n_bouts=sum(flw_count_t>0),
-            flowered=n_bouts>0) %>% 
-  group_by(species) %>% 
-  summarise(mean(!flowered,na.rm=T))
+
+## look by species and format into nice table
+left_join(left_join(ltreb %>% group_by(species,endo_01,id) %>% 
+  summarise(max_age=max(age)) %>% summarise(mean_life=mean(max_age),sd_life=sd(max_age)),
+  ltreb %>% 
+  group_by(species,endo_01,id) %>% 
+  summarise(n_bouts=sum(flw_count_t>0),flowered=n_bouts>0) %>% 
+  group_by(species,endo_01) %>% 
+  summarise(flowered=mean(flowered,na.rm=T)),
+  by=c("species","endo_01")),
+  ltreb %>% group_by(species,endo_01) %>% summarise(N=n()),
+  by=c("species","endo_01")) %>% mutate(Species = recode(
+    species,
+    POAL = "Poa alsodes",
+    FESU = "Festuca subverticillata",
+    AGPE = "Agrostis perennans",
+    POSY = "Poa sylvestris",
+    POAU = "Poa autumnalis",
+    ELVI = "Elymus virginicus",
+    ELRI = "Elymus villosus"),
+    Symbiosis=ifelse(endo_01==0,"S-","S+")) %>% as.data.frame() -> TableS2
+print(xtable(TableS2[,c("Species","Symbiosis","N","mean_life","sd_life","flowered")]),
+  include.rownames=FALSE)
 
 ## we need a criterion for the max age that we will try to model
 ## before lumping tail ages as "old"
@@ -389,6 +406,11 @@ posterior_summary_surv <- bind_rows(posterior_long_Ap_surv,posterior_long_Er_sur
     lower50 = quantile(Value, 0.25),upper50 = quantile(Value, 0.75),
     prob_pos = mean(Value>0)
   )
+## what is the max and min prob pos for each species?
+posterior_summary_surv %>% 
+  group_by(species) %>% 
+  summarise(minprobpos = min(prob_pos),
+            maxprobpos = max(prob_pos))
 
 #dump big objects
 rm(posterior_long_Ap_surv,posterior_long_Er_surv,posterior_long_Ev_surv,
@@ -883,6 +905,11 @@ posterior_summary_fert <- bind_rows(posterior_long_Ap_fert,posterior_long_Er_fer
     lower50 = quantile(Value, 0.25),upper50 = quantile(Value, 0.75),
     prob_pos = mean(Value>0)
   )
+## what is the max and min prob pos for each species?
+posterior_summary_fert %>% 
+  group_by(species) %>% 
+  summarise(minprobpos = min(prob_pos),
+            maxprobpos = max(prob_pos))
 
 #dump big objects
 rm(posterior_long_Ap_fert,posterior_long_Er_fert,posterior_long_Ev_fert,
