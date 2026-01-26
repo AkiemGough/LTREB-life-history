@@ -586,8 +586,7 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
   axis(1,at=0:7,labels=c("0","1","2","3","4","5","6","7+"))
   axis(2,at=c(0,0.25,0.5,0.75,1))
   
-  plot(NA, xlim = range(posterior_summary_surv$relage), 
-       ylim = c(0, 1),
+  plot(NA, xlim=c(0,1.1),ylim = c(0, 1),
        xlab = "Relative age", 
        ylab = "Probability of positive symbiont effect")
   abline(h = 0.5, lty = 2)  # line at 0
@@ -597,9 +596,8 @@ jpeg("manuscript/figures/age_specific_survival.jpg", width = 3300, height = 1500
           posterior_summary_surv$prob_pos[posterior_summary_surv$species==spp_list[sp]], 
           col = species_colors[sp], lwd = 2) 
   }
-  legend("bottomright", ncol=2,
-         legend = c("A.p.","E.vil.","E.vir.","F.s.","P.al.","P.au.","P.s."), col = species_colors,
-         lty = 1, lwd = 2, cex = 0.75, text.font=3)
+  text(1.02,posterior_summary_surv$prob_pos[posterior_summary_surv$relage==1], font=3,cex=0.8,
+       adj=0,labels=c("A.p.","E.vil.","E.vir.","F.s.","P.al.","P.au.","P.s."), col = species_colors)
 }
 dev.off()
 
@@ -1084,10 +1082,8 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
   axis(1,at=1:7,labels=c("1","2","3","4","5","6","7+"))
   axis(2,at=0:round(quantile(Ps_fert$flw_count_t,ylim_quantile)))
   
-  plot(NA, xlim = range(posterior_summary_fert$relage), 
-       ylim = c(0, 1),
-       xlab = "Relative age", 
-       ylab = "Probability of positive symbiont effect")
+  plot(NA, xlim = c(0,1.1), ylim = c(0, 1),
+       xlab = "Relative age",ylab = "Probability of positive symbiont effect")
   abline(h = 0.5, lty = 2)  # line at 0
   title(expression("H) All species"),adj=0)
   for(sp in 1:length(spp_list)){
@@ -1095,8 +1091,8 @@ jpeg("manuscript/figures/age_specific_fertility.jpg", width = 3300, height = 150
           posterior_summary_fert$prob_pos[posterior_summary_fert$species==spp_list[sp]], 
           col = species_colors[sp], lwd = 2) 
   }
-  legend("topleft", legend = c("A.p.","E.vil.","E.vir.","F.s.","P.al.","P.au.","P.s."), col = species_colors,
-         lty = 1, lwd = 2, cex = 0.5, ncol=3)
+  text(1.02,posterior_summary_fert$prob_pos[posterior_summary_fert$relage==1], font=3,cex=0.8,
+       adj=0,labels=c("A.p.","E.vil.","E.vir.","F.s.","P.al.","P.au.","P.s."), col = species_colors)
 }
 dev.off()
 
