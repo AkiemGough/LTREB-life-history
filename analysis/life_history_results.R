@@ -461,15 +461,44 @@ ggsave("manuscript/figures/lambdadiffplot.jpg",
 
 
 # individual life history traits ------------------------------------------
-ggplot(pca.dat,aes(x=ShapeSurv,fill=Endo))+geom_density(alpha=0.1)+
-  geom_vline(xintercept=0)+facet_wrap(~Species,scales="free")
-ggplot(pca.dat,aes(x=ShapeRep,fill=Endo))+geom_density(alpha=0.1)+
-  facet_wrap(~Species,scales="free")
+pca.dat %>% mutate(Species2 = recode(
+  Species,
+  POAL = "Poa alsodes",
+  FESU = "Festuca subverticillata",
+  AGPE = "Agrostis perennans",
+  POSY = "Poa sylvestris",
+  POAU = "Poa autumnalis",
+  ELVI = "Elymus virginicus",
+  ELRI = "Elymus villosus"))->pca.dat
 
-ggplot(pca.dat,aes(x=LifeExpect,fill=Endo))+geom_density(alpha=0.1)+
-  facet_wrap(~Species,scales="free")
-ggplot(pca.dat,aes(x=Longevity,fill=Endo))+geom_density(alpha=0.1)+
-  facet_wrap(~Species,scales="free")
+##shape survival
+ggplot(pca.dat,aes(x=ShapeSurv,fill=Endo))+geom_histogram(alpha=0.8)+
+  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Shape of survival")+ylab("Posterior probability density")
+##shape reproduction
+ggplot(pca.dat,aes(x=ShapeRep,fill=Endo))+geom_histogram(alpha=0.8)+
+  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Shape of reproduction")+ylab("Posterior probability density")
+##R0
+ggplot(pca.dat,aes(x=R0,fill=Endo))+geom_histogram(alpha=0.8)+
+  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("R0")+ylab("Posterior probability density")
+##life expectancy
+ggplot(pca.dat,aes(x=LifeExpect,fill=Endo))+geom_histogram(alpha=0.8)+
+  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Mean life expectancy (years)")+ylab("Posterior probability density")
+##max long
+ggplot(pca.dat,aes(x=Longevity,fill=Endo))+geom_histogram(alpha=0.8)+
+  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Maximum longevity (years)")+ylab("Posterior probability density")
+##generation time
+ggplot(pca.dat,aes(x=GenTime,fill=Endo))+geom_histogram(alpha=0.8)+
+  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Generation time (years)")+ylab("Posterior probability density")
+##Entropy
+ggplot(pca.dat,aes(x=EntropyD,fill=Endo))+geom_histogram(alpha=0.8)+
+  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Demetrius' entropy")+ylab("Posterior probability density")
 
 ## data frame for life history effects
 lifehistorypost %>% 
