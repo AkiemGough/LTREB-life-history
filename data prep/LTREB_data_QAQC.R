@@ -10,14 +10,15 @@ library(tidyverse)
 ## read_excel still used for plot read-in because that is small and simple
 
 # Poa autumnalis in TX ----------------------------------------------------
-#hi this is a test
 ## read in raw POAU data from Miller Lab drive folder
-tom_dir<-"G:/Shared drives/Miller Lab/LTREB/POAU/"
-##bell_dir<-
-use_dir<-tom_dir
-poau_demog <- read.csv(paste0(use_dir,"POAU_SFAEF_demography_20082023.csv"))
-poau_plots <- read_excel(paste0(use_dir,"POAU SFAEF demography complete2.xlsx"),
-                               sheet = "POAU_plot_assignment")
+# tom_dir<-"G:/Shared drives/Miller Lab/LTREB/POAU/"
+# use_dir<-tom_dir
+# poau_demog <- read.csv(paste0(use_dir,"POAU_SFAEF_demography_20082023.csv"))
+poau_demog <- read.csv("data prep/POAU_SFAEF_demography_20082023.csv")
+# poau_plots <- read_excel(paste0(use_dir,"POAU SFAEF demography complete2.xlsx"),
+#                                sheet = "POAU_plot_assignment")
+poau_plots <- read.csv("data prep/POAU_plot_assignment.csv")
+
 poau <- left_join(poau_demog,poau_plots,by="Plot")
 ## change name of org/rec
 poau %>% rename(org_rec = Org.rec) %>% 
@@ -152,10 +153,10 @@ which(poau$inf_number_spring_t1-floor(poau$inf_number_spring_t1)>0)
 ## read in data and apply some of the data transformations used above
 ## here i am reading in directly from the data package github
 ## indiana<-read.csv("https://raw.githubusercontent.com/texmiller/LTREB-data-package/refs/heads/master/LDW_LTREB_20072022.csv")
-
 ##update 10/20/2025 -- akiem and tom found an issue with agpe 2022 (see endodemog_data_processing.R)
 ##here we now read in the updated version of the EDI data set from the local drive
-indiana<-read.csv("C:/Users/tm9/Dropbox/github/LTREB-data-package/LDW_LTREB_20072022.csv")
+#indiana<-read.csv("C:/Users/tm9/Dropbox/github/LTREB-data-package/LDW_LTREB_20072022.csv")
+indiana<-read.csv("data prep/LDW_LTREB_20072022.csv")
 
 indiana %>% 
   rowwise %>% 
