@@ -10,7 +10,7 @@ library(ggforce)
 ##read in life history outputs
 lifehistorypost<-read.csv("analysis/lifehistorypost.csv")
 ## add posterior draw -- we used 500 samples for each species
-lifehistorypost$draw<-rep(1:500,times=7) #n_post from vital rates script
+lifehistorypost$draw<-rep(1:500,times=7)
 
 ## check that matrices were ergodic and irreducible
 summary(lifehistorypost$isergodic)
@@ -474,31 +474,60 @@ pca.dat %>% mutate(Species2 = recode(
 ##shape survival
 ggplot(pca.dat,aes(x=ShapeSurv,fill=Endo))+geom_histogram(alpha=0.8)+
   geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
-  xlab("Shape of survival")+ylab("Posterior probability density")
+  xlab("Shape of survival")+ylab("Posterior probability density")+
+  theme(legend.position = c(0.4, 0.1),legend.justification = c("center", "bottom"))+
+  scale_fill_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue"))
+ggsave(filename="manuscript/figures/ShapeSurv.jpg",
+        width = 6,height = 6,dpi = 300,units = "in")
+
 ##shape reproduction
 ggplot(pca.dat,aes(x=ShapeRep,fill=Endo))+geom_histogram(alpha=0.8)+
   geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
-  xlab("Shape of reproduction")+ylab("Posterior probability density")
+  xlab("Shape of reproduction")+ylab("Posterior probability density")+
+  theme(legend.position = c(0.4, 0.1),legend.justification = c("center", "bottom"))+
+  scale_fill_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue"))
+ggsave(filename="manuscript/figures/ShapeRep.jpg",
+       width = 6,height = 6,dpi = 300,units = "in")
 ##R0
 ggplot(pca.dat,aes(x=R0,fill=Endo))+geom_histogram(alpha=0.8)+
-  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
-  xlab("R0")+ylab("Posterior probability density")
+  facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("R0")+ylab("Posterior probability density")+
+  theme(legend.position = c(0.4, 0.1),legend.justification = c("center", "bottom"))+
+  scale_fill_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue"))
+ggsave(filename="manuscript/figures/R0.jpg",
+       width = 6,height = 6,dpi = 300,units = "in")
 ##life expectancy
 ggplot(pca.dat,aes(x=LifeExpect,fill=Endo))+geom_histogram(alpha=0.8)+
-  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
-  xlab("Mean life expectancy (years)")+ylab("Posterior probability density")
+  facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Mean life expectancy (years)")+ylab("Posterior probability density")+
+  theme(legend.position = c(0.4, 0.1),legend.justification = c("center", "bottom"))+
+  scale_fill_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue"))
+ggsave(filename="manuscript/figures/LifeExpect.jpg",
+       width = 6,height = 6,dpi = 300,units = "in")
 ##max long
 ggplot(pca.dat,aes(x=Longevity,fill=Endo))+geom_histogram(alpha=0.8)+
-  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
-  xlab("Maximum longevity (years)")+ylab("Posterior probability density")
+  facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Maximum longevity (years)")+ylab("Posterior probability density")+
+  theme(legend.position = c(0.4, 0.1),legend.justification = c("center", "bottom"))+
+  scale_fill_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue"))
+ggsave(filename="manuscript/figures/Longevity.jpg",
+       width = 6,height = 6,dpi = 300,units = "in")
 ##generation time
 ggplot(pca.dat,aes(x=GenTime,fill=Endo))+geom_histogram(alpha=0.8)+
-  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
-  xlab("Generation time (years)")+ylab("Posterior probability density")
+  facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Generation time (years)")+ylab("Posterior probability density")+
+  theme(legend.position = c(0.4, 0.1),legend.justification = c("center", "bottom"))+
+  scale_fill_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue"))
+ggsave(filename="manuscript/figures/GenTime.jpg",
+       width = 6,height = 6,dpi = 300,units = "in")
 ##Entropy
 ggplot(pca.dat,aes(x=EntropyD,fill=Endo))+geom_histogram(alpha=0.8)+
-  geom_vline(xintercept=0)+facet_wrap(~Species2,scales="free")+theme_classic()+
-  xlab("Demetrius' entropy")+ylab("Posterior probability density")
+  facet_wrap(~Species2,scales="free")+theme_classic()+
+  xlab("Demetrius' entropy")+ylab("Posterior probability density")+
+  theme(legend.position = c(0.4, 0.1),legend.justification = c("center", "bottom"))+
+  scale_fill_manual(values = c("S-" = "tomato", "S+" = "cornflowerblue"))
+ggsave(filename="manuscript/figures/EntropyD.jpg",
+       width = 6,height = 6,dpi = 300,units = "in")
 
 ## data frame for life history effects
 lifehistorypost %>% 
