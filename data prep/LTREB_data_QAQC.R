@@ -278,3 +278,46 @@ left_join(ltreb1 %>% group_by(species) %>% summarise(nrows1=n()),
 left_join(ltreb1 %>% group_by(species) %>% summarise(n_flwcount1=sum(!is.na(flw_count_t))),
           ltreb2 %>% group_by(species) %>% summarise(n_flwcount2=sum(!is.na(flw_count_t))),
           by="species") %>% mutate(diff=n_flwcount1-n_flwcount2)
+
+
+#ENTER AKIEM - maintaining individual spike counts and removing mean spike counts
+#the original version of this section starts at line 220
+#the purpose of this new version is consistency with the columns of the published data set
+##prepare indiana data for row bind with poau data -- take only the comlumns that match
+
+bind_rows(indiana_no_problems,birthyears_fixed[,paste(names(indiana_no_problems))]) %>% 
+  ##change org_rec so that original=1 / recruit=0
+  mutate(origin_01=abs(origin_01-1)) %>% 
+  select(species,plot,endo_01,id,origin_01,endo_status_from_check,birth,year_t,age,
+         size_t,flw_count_t,
+         spike_a_t,spike_b_t,spike_c_t,spike_d_t,
+         year_t1,surv_t1,size_t1,flw_count_t1,
+         spike_a_t,spike_b_t,spike_c_t,spike_d_t,
+         dist_a,dist_b) -> indiana_for_merge_indi_spiks
+
+##prepare POAU data for row bind with indiana data
+poau %>% 
+  mutate(species="POAU") %>% 
+  ## drop 2022-23 just to have the same years as indiana
+  filter(year_t<2022) %>% 
+  select(species,Plot,Plot_endo_status,indID,org_rec,year_recruit,Endo,year_t,age,
+         tiller_number_t,inf_number_spring_t,
+         spike_a_t,spike_b_t,spike_c_t,
+         year_t1,spring_survival_t1,
+         tiller_number_t1,inf_number_spring_t1,
+         spike_a_t,spike_b_t,spike_c_t,
+         Distance.A,Distance.B) %>% 
+  rename(plot=Plot, endo_01=Plot_endo_status, id=indID, origin_01=org_rec,
+         birth=year_recruit, endo_status_from_check=Endo,
+         size_t=tiller_number_t, flw_count_t=inf_number_spring_t, surv_t1=spring_survival_t1,
+         size_t1=tiller_number_t1, flw_count_t1=inf_number_spring_t1,
+         dist_a=Distance.A,dist_b=Distance.B)-> poau_for_merge_indi_spiks
+
+## does not have same number of columns because we don't collect spikelet d data anymore
+dim(poau_for_merge_indi_spiks);dim(indiana_for_merge_indi_spiks)
+
+
+## write out a cleaned, derived data frame
+ltreb<-bind_rows(indiana_for_merge_indi_spiks,poau_for_merge_indi_spiks)
+names(ltreb)
+write.csv(ltreb,"data prep/ltreb_allspp_qaqc_indi_spiks.csv")
