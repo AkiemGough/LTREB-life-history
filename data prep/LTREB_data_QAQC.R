@@ -292,7 +292,7 @@ bind_rows(indiana_no_problems,birthyears_fixed[,paste(names(indiana_no_problems)
          size_t,flw_count_t,
          spike_a_t,spike_b_t,spike_c_t,spike_d_t,
          year_t1,surv_t1,size_t1,flw_count_t1,
-         spike_a_t,spike_b_t,spike_c_t,spike_d_t,
+         spike_a_t1,spike_b_t1,spike_c_t1,spike_d_t1,
          dist_a,dist_b) -> indiana_for_merge_indi_spiks
 
 ##prepare POAU data for row bind with indiana data
@@ -305,7 +305,7 @@ poau %>%
          spike_a_t,spike_b_t,spike_c_t,
          year_t1,spring_survival_t1,
          tiller_number_t1,inf_number_spring_t1,
-         spike_a_t,spike_b_t,spike_c_t,
+         spike_a_t1,spike_b_t1,spike_c_t1,
          Distance.A,Distance.B) %>% 
   rename(plot=Plot, endo_01=Plot_endo_status, id=indID, origin_01=org_rec,
          birth=year_recruit, endo_status_from_check=Endo,
